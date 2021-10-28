@@ -3,22 +3,28 @@
   "name": "Grade Sync for Fast Grader",
   "version": "1.0",
   "description": "Sync grades input via the fast grader tool with Google Classroom.",
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html"
+  },
   "icons": {
     "16": "icons/favicon-16x16.png",
     "32": "icons/favicon-32x32.png"
   },
   "browser_action": {
     "default_popup": "popup.html",
-    "default_icon": "./icons/favicon-32x32.png",
-    "persistent": false
+    "default_icon": "./icons/favicon-32x32.png"
   },
-  "permissions": ["http://localhost:8000"],
+  "background": {
+    "persistent": false,
+    "scripts": ["background.js"]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAurAtcExAPpAGACKquojYKnEZtvgQQfkUf4IgDm4vAOYx2dY6ji6E9Q6PQLtRNzx84ma1JqpBktVvwQwoXw4rBNtxik9dgbcZ6RozPNeJfY2VTFdhH78MQcufQgpvbOGSCe2tVW52UkywAGod8rJadAZPuY4yt4TxLfrEkcOBrgnI2EdUOsfiHl6+mmjC1szxhFXuC++9a6yoLRWLG77ekoLy+1XXffJga90AI+4JiCBGawkcxtGUk0JLXtb4w3pBGy8d4ty+MgVdDeLVQvAAStj5ttu1V8fHoX4V1lf7mzq4MwqnDMrPMdSSwythCWw9sbqvdn0i1YQfekleGE1AOwIDAQAB",
+  "permissions": ["identity"],
   "content_security_policy": "script-src 'self' https://unpkg.com https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com; object-src 'self'",
   "content_scripts": [
     {
       "matches": ["*://classroom.google.com/*"],
-      "js": ["content.js", "vendor/webextension_polyfill.js"]
+      "js": ["content.js"]
     }
   ]
 }
