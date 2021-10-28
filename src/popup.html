@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="https://unpkg.com/htmx.org@1.6.0"></script>
-    <base href="http://localhost:8000/" target="_blank">
+    <script src="https://unpkg.com/htmx.org@1.6.0/dist/htmx.js"></script>
+    <!-- <script src="htmx.js"></script> -->
+
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet">
+
+    <!-- tailwind styles -->
+    <link
+        href="http://localhost:8000/static/css/dist/styles.css"
+        rel="stylesheet">
+
   </head>
-  <body>
-    <div hx-trigger="load" hx-get="/ext/"></div>
+  <body class="p-2">
+    <div hx-trigger="load" hx-get="http://localhost:8000/ext/"></div>
+    <script src="popup.js"></script>
   </body>
 </html>
