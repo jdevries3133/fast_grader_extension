@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://unpkg.com/htmx.org@1.6.0/dist/htmx.js"></script>
-    <!-- <script src="htmx.js"></script> -->
 
     <!-- fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,14 +13,20 @@
       href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap"
       rel="stylesheet">
 
-    <!-- tailwind styles -->
+    <!-- tailwind styles; same build as main site -->
     <link
         href="http://localhost:8000/static/css/dist/styles.css"
         rel="stylesheet">
-
   </head>
-  <body class="p-2">
-    <div hx-trigger="load" hx-get="http://localhost:8000/ext/"></div>
+
+  <body class="p-2 min-h-56 min-w-96 bg-gradient-to-tr from-lime-100 via-green-100 to-lime-200 bg-blur">
+    <div hx-trigger="load" hx-get="http://localhost:8000/ext/">
+      <div style="min-height: 320px;">
+        <div hx-get="/loading.html" hx-trigger="load"></div>
+      </div>
+    </div>
     <script src="popup.js"></script>
+    <script src="macWorkaround.js"></script>
   </body>
 </html>
+

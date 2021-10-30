@@ -23,7 +23,7 @@
     "scripts": ["background.js"]
   },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAurAtcExAPpAGACKquojYKnEZtvgQQfkUf4IgDm4vAOYx2dY6ji6E9Q6PQLtRNzx84ma1JqpBktVvwQwoXw4rBNtxik9dgbcZ6RozPNeJfY2VTFdhH78MQcufQgpvbOGSCe2tVW52UkywAGod8rJadAZPuY4yt4TxLfrEkcOBrgnI2EdUOsfiHl6+mmjC1szxhFXuC++9a6yoLRWLG77ekoLy+1XXffJga90AI+4JiCBGawkcxtGUk0JLXtb4w3pBGy8d4ty+MgVdDeLVQvAAStj5ttu1V8fHoX4V1lf7mzq4MwqnDMrPMdSSwythCWw9sbqvdn0i1YQfekleGE1AOwIDAQAB",
-  "permissions": ["identity"],
+  "permissions": ["identity", "storage", "tabs"],
   "content_security_policy": "script-src 'self' https://unpkg.com https://apis.google.com https://www.gstatic.com https://www.googleapis.com https://securetoken.googleapis.com; object-src 'self'",
   "content_scripts": [
     {
