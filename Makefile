@@ -1,6 +1,4 @@
 all: build
-
-prod: build
 	python3 prep_prod.py
 
 build: clean

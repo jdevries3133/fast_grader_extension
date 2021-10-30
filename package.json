@@ -1,0 +1,27 @@
+{
+  "name": "fast_grader_extension",
+  "version": "1.0.0",
+  "description": "Browser extension to sync grades that were input on https://classfast.app/",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jdevries3133/fast_grader_extension.git"
+  },
+  "author": "Jack DeVries <jdevries3133@gmail.com>",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/jdevries3133/fast_grader_extension/issues"
+  },
+  "homepage": "https://github.com/jdevries3133/fast_grader_extension#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.16.0",
+    "@testing-library/jest-dom": "^5.14.1",
+    "babel-jest": "^27.3.1",
+    "jest": "^27.3.1",
+    "jest-chrome": "^0.7.2"
+  }
+}
