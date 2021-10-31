@@ -9,7 +9,6 @@ let AUTH_TOKEN: null | string = null;
 async function performSync(e: Event) {
   if (e instanceof Element) {
     const result = await askBackgroundTo(MessageTypes.PERFORM_SYNC);
-    // TODO: handle possible error result gracefully
     console.log(result);
   }
 }

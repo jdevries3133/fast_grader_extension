@@ -17,7 +17,9 @@ describe("getParentTable", () => {
 
   it("finds the table", async () => {
     insertTables(1);
-    const res = await getParentTable();
+    const res = await getParentTable().catch((e) => {
+      throw new Error(e);
+    });
     expect(res).toContainHTML('<table aria-label="Students>');
   });
 
@@ -26,12 +28,14 @@ describe("getParentTable", () => {
     setTimeout(() => insertTables(1), 1000);
 
     // nonetheless, the result should be accurate due to internal re-trying
-    const res = await getParentTable();
+    const res = await getParentTable().catch((e) => {
+      throw new Error(e);
+    });
     expect(res).toContainHTML('<table aria-label="Students>');
   });
 
   it("resolves to an error and logs the error if there are too many tables", async () => {
     insertTables(3);
-    expect(getParentTable).rejects.toThrowError();
+    await expect(getParentTable()).rejects.toThrow();
   });
 });

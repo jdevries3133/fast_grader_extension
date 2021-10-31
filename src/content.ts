@@ -15,7 +15,9 @@ export async function getParentTable(n_retries = 0): Promise<Element> {
         await wait(500);
         return resolve(await getParentTable(n_retries + 1));
       } catch (e) {
-        logToBackend("failed to get parent table");
+        const msg = "failed to get parent table";
+        logToBackend(msg);
+        reject(msg);
       }
     }
     if (possibleTables.length === 1) {
