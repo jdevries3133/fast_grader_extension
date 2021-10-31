@@ -11,26 +11,28 @@ export enum MessageTypes {
  * constrained types. browser.runtime.sendMessage should never be used directly
  */
 export async function askBackgroundTo(do_: MessageTypes) {
-  return browser.runtime.sendMessage(null, do_);
+  return await browser.runtime.sendMessage(null, do_);
 }
 
 /**
  * checks localStorage for a token, or calls the login function to get one.
  */
-async function getToken() {
-  let tok = await browser.storage.sync.get("token");
+async function getToken(): Promise<string> {
+  const result: { ["token"]: string } | undefined =
+    await browser.storage.sync.get("token");
+  let tok: string | undefined = result?.token;
   if (!tok) {
     tok = await login();
-    browser.storage.sync.set({ token: tok.token });
+    browser.storage.sync.set({ token: tok });
   }
-  return tok.token;
+  return tok;
 }
 
 /**
  * returns an access key for our API, derived from the user's oauth access
  * token.
  */
-async function login() {
+async function login(nRetries = 0): Promise<string> {
   // the chrome identity api seems much easier than the generic browser
   // identiy API. i.e., you can just grab the token at any time, since users
   // are always logged in to chrome. When the time comes to launch the
@@ -68,7 +70,11 @@ async function login() {
           const jsn = await res.json();
           resolve(jsn.key);
         } catch (e) {
-          reject(e);
+          if (nRetries < 5) {
+            return login();
+          } else {
+            reject(e);
+          }
         }
       }
     );
