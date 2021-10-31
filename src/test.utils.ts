@@ -6,10 +6,10 @@ test("wait", async () => {
   setTimeout(() => (foo = "baz"), CHANGE_FOO_AFTER);
 
   // foo has not yet changed
-  await wait(CHANGE_FOO_AFTER - 1);
+  await wait(CHANGE_FOO_AFTER - 2);
   expect(foo).toBe("bar");
 
   // now, it has
-  await wait(CHANGE_FOO_AFTER + 1);
+  await wait(CHANGE_FOO_AFTER + 2);
   expect(foo).toBe("baz");
 });
