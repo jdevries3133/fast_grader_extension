@@ -8,7 +8,6 @@ async function wait(ms) {
 
 function logError(...msg) {
   logToBackend(msg.join(" "));
-  console.error(msg);
 }
 
 /******************************************************************************
@@ -52,59 +51,12 @@ async function getParentTable(n_retries = 0) {
       msg.push(`tables: ${stringRepresentations.join(", ")}`);
     } catch (e) {}
     logError(...msg);
-    reject();
-  });
-}
-
-/******************************************************************************
- * api connectors
- */
-
-/**
- * Ask background script for auth token
- *
- * @returns {string || null}
- */
-async function getAuthToken() {
-  return new Promise((resolve) => {
-    try {
-      chrome.runtime.sendMessage("GET_TOKEN", (response) => {
-        resolve(response);
-      });
-    } catch (e) {}
-  });
-}
-
-async function backendRequest(route, method, data, headers) {
-  const tok = getAuthToken();
-  if (tok) {
-    headers = {
-      Authorization: `Token ${await getAuthToken()}`,
-      "Content-Type": "application/json",
-      ...headers,
-    };
-  }
-  return fetch(`http://localhost:8000${route}`, {
-    method,
-    headers,
-    body: JSON.stringify(data),
-  });
-}
-
-/**
- * Send log message with some standard context to the backend. The first
- * log will also dump the DOM to the backend for debugging.
- */
-const wasDomDumped = false;
-async function logToBackend(msg, json = null) {
-  backendRequest("/ext/log_error/", "POST", {
-    message: msg,
-    extra_data: json,
-    dom_dump: `<html>${document.head.outerHTML}${document.body.outerHTML}`,
+    reject(new Error(msg));
   });
 }
 
 module.exports = {
   wait,
   getParentTable,
+  logError,
 };

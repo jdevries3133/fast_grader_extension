@@ -1,40 +1,39 @@
-let AUTH_TOKEN = null;
+import { HtmxEventDetail } from "./htmxTypes";
+import { applyPatch } from "./macWorkaround";
 
-async function getTabs() {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        resolve(tabs);
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
+let AUTH_TOKEN: null | string = null;
 
 async function isLocationValid() {
-  const tabs = await getTabs();
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   console.log(tabs);
 }
 
-function performSync(e) {
-  const pk = e.target.getAttribute("data-pk");
-  chrome.runtime.sendMessage("PERFORM_SYNC", (res) => {});
+function performSync(e: Event): void {
+  if (e instanceof Element) {
+    browser.runtime.sendMessage("PERFORM_SYNC");
+  }
 }
 
 function haltSync() {}
 
 function openClassFast() {
-  chrome.tabs.create({
+  browser.tabs.create({
     url: "http://localhost:8000/",
   });
 }
-document.body.addEventListener("htmx:configRequest", (event) => {
-  if (AUTH_TOKEN) {
-    event.detail.headers["Authorization"] = `Token ${AUTH_TOKEN}`;
-    event.detail.headers["Accept"] = "text/html";
+
+document.body.addEventListener(
+  "htmx:configRequest",
+  async (event: CustomEvent<HtmxEventDetail>) => {
+    while (!AUTH_TOKEN) {
+      await wait(100);
+    }
+    if (AUTH_TOKEN) {
+      event.detail.headers["Authorization"] = `Token ${AUTH_TOKEN}`;
+      event.detail.headers["Accept"] = "text/html";
+    }
   }
-});
+);
 
 /**
  * Apparently content-security policies are so DAMN psychophantic that they
@@ -46,7 +45,13 @@ document.body.addEventListener("htmx:configRequest", (event) => {
  * first event listener will capture the event and stop its' propagation.
  * This helps in case we leak a listener by accident.
  */
-const eventRegistry = [
+type EventName = keyof HTMLElementEventMap;
+const eventRegistry: Array<{
+  selector: string;
+  handler: EventListener;
+  event: EventName;
+  active?: boolean;
+}> = [
   {
     selector: ".syncSessionButton",
     handler: performSync,
@@ -73,7 +78,7 @@ document.body.addEventListener("htmx:afterSwap", () => {
       // add event listener
       const els = document.querySelectorAll(selector);
       if (els.length !== 0) {
-        els.forEach((el) => {
+        els.forEach((el: HTMLElement) => {
           el.addEventListener(event, handler);
           // update registry
         });
@@ -89,6 +94,7 @@ document.body.addEventListener("htmx:afterSwap", () => {
   });
 });
 
-chrome.runtime.sendMessage("GET_TOKEN", (res) => {
-  AUTH_TOKEN = res;
+document.addEventListener("DOMContentLoaded", async () => {
+  AUTH_TOKEN = await browser.runtime.sendMessage("GET_TOKEN");
+  applyPatch();
 });

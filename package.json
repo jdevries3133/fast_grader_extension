@@ -4,6 +4,11 @@
   "description": "Browser extension to sync grades that were input on https://classfast.app/",
   "main": "index.js",
   "scripts": {
+    "dist": "npm run build && npm run tailwind-build",
+    "build": "webpack --mode production",
+    "dev": "webpack --mode production --watch",
+    "tailwind-build": "npx tailwindcss -i ./src/styles.css -o ./dist/styles.css",
+    "tailwind-dev": "npx tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch",
     "test": "jest"
   },
   "repository": {
@@ -15,13 +20,36 @@
   "bugs": {
     "url": "https://github.com/jdevries3133/fast_grader_extension/issues"
   },
+  "browserslist": "> 0.25%, not dead",
   "homepage": "https://github.com/jdevries3133/fast_grader_extension#readme",
-  "dependencies": {},
   "devDependencies": {
-    "@babel/plugin-transform-modules-commonjs": "^7.16.0",
+    "@babel/core": "^7.16.0",
+    "@babel/plugin-transform-runtime": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-typescript": "^7.16.0",
+    "@tailwindcss/aspect-ratio": "^0.3.0",
+    "@tailwindcss/forms": "^0.3.4",
+    "@tailwindcss/line-clamp": "^0.2.2",
+    "@tailwindcss/typography": "^0.4.1",
     "@testing-library/jest-dom": "^5.14.1",
+    "@types/webextension-polyfill": "^0.8.1",
+    "autoprefixer": "^10.4.0",
     "babel-jest": "^27.3.1",
+    "babel-loader": "^8.2.3",
+    "copy-webpack-plugin": "^9.0.1",
     "jest": "^27.3.1",
-    "jest-chrome": "^0.7.2"
+    "postcss": "^8.3.11",
+    "source-map-loader": "^3.0.0",
+    "string-replace-loader": "^3.0.3",
+    "tailwindcss": "^2.2.19",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.4.4",
+    "webextension-polyfill": "^0.8.0",
+    "webpack": "^5.61.0",
+    "webpack-cli": "^4.9.1"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.16.0",
+    "htmx.org": "^1.6.0"
   }
 }
