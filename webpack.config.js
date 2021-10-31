@@ -11,14 +11,17 @@ module.exports = {
     path: path.join(__dirname, "dist"),
     filename: "[name].bundle.js",
   },
+  resolve: {
+    extensions: [".ts", ".js"],
+  },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
+        test: /\.ts(x)?$/,
         loader: "babel-loader",
       },
       {
-        test: /\.js$/,
+        test: /\.(j|t)s(x)?$/,
         use: ["source-map-loader"],
         enforce: "pre",
       },

@@ -1,16 +1,16 @@
 import { HtmxEventDetail } from "./htmxTypes";
 import { applyPatch } from "./macWorkaround";
+import { askBackgroundTo, MessageTypes } from "./background";
+import { wait } from "./utils";
+import { BACKEND_BASE_URL } from "./constants";
 
 let AUTH_TOKEN: null | string = null;
 
-async function isLocationValid() {
-  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-  console.log(tabs);
-}
-
-function performSync(e: Event): void {
+async function performSync(e: Event) {
   if (e instanceof Element) {
-    browser.runtime.sendMessage("PERFORM_SYNC");
+    const result = await askBackgroundTo(MessageTypes.PERFORM_SYNC);
+    // TODO: handle possible error result gracefully
+    console.log(result);
   }
 }
 
@@ -18,7 +18,7 @@ function haltSync() {}
 
 function openClassFast() {
   browser.tabs.create({
-    url: "http://localhost:8000/",
+    url: BACKEND_BASE_URL,
   });
 }
 
@@ -95,6 +95,6 @@ document.body.addEventListener("htmx:afterSwap", () => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-  AUTH_TOKEN = await browser.runtime.sendMessage("GET_TOKEN");
+  AUTH_TOKEN = await askBackgroundTo(MessageTypes.GET_TOKEN);
   applyPatch();
 });

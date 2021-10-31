@@ -1,23 +1,9 @@
-/******************************************************************************
- * utils
- */
-
-async function wait(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function logError(...msg) {
-  logToBackend(msg.join(" "));
-}
-
-/******************************************************************************
- * DOM interaction
- */
+import { logToBackend, wait } from "./utils";
 
 /**
  * Return the table with all students in it.
  */
-async function getParentTable(n_retries = 0) {
+export async function getParentTable(n_retries = 0): Promise<Element> {
   if (n_retries > 5) {
     throw new Error("cannot find parent table");
   }
@@ -29,7 +15,7 @@ async function getParentTable(n_retries = 0) {
         await wait(500);
         return resolve(await getParentTable(n_retries + 1));
       } catch (e) {
-        logError("failed to get parent table");
+        logToBackend("failed to get parent table");
       }
     }
     if (possibleTables.length === 1) {
@@ -44,19 +30,12 @@ async function getParentTable(n_retries = 0) {
       // try to send string representations of the elements for additional context
       const stringRepresentations = [];
       for (let i = 0; i < possibleTables.length; i++) {
-        stringRepresentations.push(
-          possibleTables[i].cloneNode(false).outerHTML
-        );
+        const el = <HTMLElement>possibleTables[i].cloneNode(false);
+        stringRepresentations.push(el.outerHTML);
       }
       msg.push(`tables: ${stringRepresentations.join(", ")}`);
     } catch (e) {}
-    logError(...msg);
-    reject(new Error(msg));
+    logToBackend(msg.join(", "));
+    reject(new Error(msg.join(" ")));
   });
 }
-
-module.exports = {
-  wait,
-  getParentTable,
-  logError,
-};

@@ -1,15 +1,8 @@
+import { askBackgroundTo, MessageTypes } from "./background";
 import { BACKEND_BASE_URL } from "./constants";
-/**
- * Ask background script for auth token
- */
-async function getAuthToken(): Promise<string> {
-  return new Promise((resolve) => {
-    try {
-      browser.runtime.sendMessage("GET_TOKEN", (response: string) => {
-        resolve(response);
-      });
-    } catch (e) {}
-  });
+
+export async function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 export async function backendRequest(
@@ -18,10 +11,10 @@ export async function backendRequest(
   data?: object,
   headers?: HeadersInit
 ): Promise<Response> {
-  const tok = getAuthToken();
+  const tok = await askBackgroundTo(MessageTypes.GET_TOKEN);
   if (tok) {
     headers = {
-      Authorization: `Token ${await getAuthToken()}`,
+      Authorization: `Token ${tok}`,
       "Content-Type": "application/json",
       ...headers,
     };
@@ -38,17 +31,29 @@ export async function backendRequest(
  * Send log message with some standard context to the backend. The first
  * log will also dump the DOM to the backend for debugging.
  */
+let wasDomDumped = false;
 export async function logToBackend(
   msg: string,
-  json: object,
+  json?: object,
   dump_dom: boolean = false
 ): Promise<void> {
   const payload: { [k: string]: string | object } = {
     message: msg,
     extra_data: json,
   };
-  if (dump_dom) {
+  if (dump_dom || !wasDomDumped) {
+    wasDomDumped = true;
     payload.dom_dump = `<html>${document.head.outerHTML}${document.body.outerHTML}`;
   }
   backendRequest("/ext/log_error/", "POST", payload);
+}
+
+/**
+ * Check the current tab's location.
+ */
+export async function isLocationValid(): Promise<boolean> {
+  // TODO: complete me
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  console.log(tabs);
+  throw new Error("not implemented");
 }

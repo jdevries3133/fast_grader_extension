@@ -1,31 +1,29 @@
-/**
- * Promise-based wrapper for chrome.storage.sync.get
- */
-function getStorageValue(key) {
-  return new Promise((resolve) =>
-    chrome.storage.sync.get([key], (val) => resolve(val[key]))
-  );
+import { logToBackend } from "./utils";
+import { BACKEND_BASE_URL } from "./constants";
+
+export enum MessageTypes {
+  GET_TOKEN,
+  PERFORM_SYNC,
 }
 
 /**
- * Promise-based wrapper for chrome.storage.sync.set
+ * Other modules consume this in order to send messages to this module, with
+ * constrained types. browser.runtime.sendMessage should never be used directly
  */
-function setStorageValue(key, value) {
-  return new Promise((resolve) =>
-    chrome.storage.sync.set({ [key]: value }, (result) => resolve(result))
-  );
+export async function askBackgroundTo(do_: MessageTypes) {
+  return browser.runtime.sendMessage(null, do_);
 }
 
 /**
  * checks localStorage for a token, or calls the login function to get one.
  */
 async function getToken() {
-  let tok = await getStorageValue("token");
+  let tok = await browser.storage.sync.get("token");
   if (!tok) {
     tok = await login();
-    setStorageValue("token", tok);
+    browser.storage.sync.set({ token: tok.token });
   }
-  return tok;
+  return tok.token;
 }
 
 /**
@@ -33,6 +31,15 @@ async function getToken() {
  * token.
  */
 async function login() {
+  // the chrome identity api seems much easier than the generic browser
+  // identiy API. i.e., you can just grab the token at any time, since users
+  // are always logged in to chrome. When the time comes to launch the
+  // extension on other platforms, this log call will remind me if I forget
+  // to fix this!
+  if (global.chrome === undefined) {
+    logToBackend("chrome identity API is not present");
+    return "";
+  }
   return new Promise(async (resolve, reject) => {
     chrome.identity.getAuthToken(
       {
@@ -40,23 +47,25 @@ async function login() {
       },
       async (token) => {
         if (chrome.runtime.lastError) {
-          return;
+          logToBackend(
+            `error while getting oauth token: ${chrome.runtime.lastError}`
+          );
+          reject("chrome error");
         }
         try {
-          res = await fetch(
-            "http://localhost:8000/accounts/dj_rest_auth/google/",
+          // we intentionally cannot call utils.backendRequest because
+          // it depends on this function to provide the token
+          const res = await fetch(
+            `${BACKEND_BASE_URL}/accounts/dj_rest_auth/google/`,
             {
               method: "POST",
-              mode: "cors",
+              body: JSON.stringify({ access_token: token }),
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                access_token: token,
-              }),
             }
           );
-          jsn = await res.json();
+          const jsn = await res.json();
           resolve(jsn.key);
         } catch (e) {
           reject(e);
@@ -66,13 +75,12 @@ async function login() {
   });
 }
 
-function handleMessage(request, sender, sendResponse) {
+async function handleMessage(request: MessageTypes, _: any) {
   switch (request) {
-    case "GET_TOKEN":
-      getToken().then((tok) => sendResponse(tok));
-      break;
+    case MessageTypes.GET_TOKEN:
+      return getToken();
   }
   return true;
 }
 
-chrome.runtime.onMessage.addListener(handleMessage);
+browser.runtime.onMessage.addListener(handleMessage);

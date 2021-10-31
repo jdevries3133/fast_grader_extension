@@ -1,18 +1,4 @@
-const { getParentTable, wait } = require("../src/content");
-
-test("wait", async () => {
-  let foo = "bar";
-  const CHANGE_FOO_AFTER = 5;
-  setTimeout(() => (foo = "baz"), CHANGE_FOO_AFTER);
-
-  // foo has not yet changed
-  await wait(CHANGE_FOO_AFTER - 1);
-  expect(foo).toBe("bar");
-
-  // now, it has
-  await wait(CHANGE_FOO_AFTER + 1);
-  expect(foo).toBe("baz");
-});
+import { getParentTable } from "./content";
 
 describe("getParentTable", () => {
   const getMockTable = () => {
@@ -21,7 +7,7 @@ describe("getParentTable", () => {
     return el;
   };
 
-  const insertTables = (nTables) => {
+  const insertTables = (nTables: number) => {
     Array(nTables)
       .fill(null)
       .forEach(() => {
