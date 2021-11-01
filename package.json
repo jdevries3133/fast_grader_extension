@@ -7,8 +7,8 @@
     "dist": "npm run build && npm run tailwind-build",
     "build": "webpack --mode production --config webpack.prod.js",
     "dev": "webpack --mode development --watch --config webpack.dev.js",
-    "tailwind-build": "npx tailwindcss -i ./src/styles.css -o ./dist/styles.css",
-    "tailwind-dev": "npx tailwindcss -i ./src/styles.css -o ./dist/styles.css --watch",
+    "tailwind-build": "npx tailwindcss -c ./tailwind.config.js -i ./src/styles.css -o ./dist/styles.css",
+    "tailwind-dev": "npx tailwindcss -c ./tailwind.config.js -i ./src/styles.css -o ./dist/styles.css --watch",
     "test": "jest"
   },
   "repository": {

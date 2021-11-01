@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  body {
+    min-height: 14rem;
+    min-width: 24rem;
+  }
+
   h1 {
     @apply text-3xl;
   }
@@ -39,14 +44,6 @@
   .landing-page-grid {
     grid-template-columns: 2fr 2fr 2fr;
   }
-}
-
-.min-h-56 {
-  min-height: 14rem;
-}
-
-.min-w-96 {
-  min-width: 24rem;
 }
 
 .link {
