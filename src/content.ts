@@ -1,3 +1,4 @@
+import { MessageTypes } from "./messaging";
 import { logToBackend, wait } from "./utils";
 
 /**
@@ -41,3 +42,14 @@ export async function getParentTable(n_retries = 0): Promise<Element> {
     reject(new Error(msg.join(" ")));
   });
 }
+
+async function performSync() {}
+
+async function handleMessage(request: MessageTypes, _: any) {
+  switch (request) {
+    case MessageTypes.PERFORM_SYNC:
+      return performSync();
+  }
+}
+
+browser.runtime.onMessage.addListener(handleMessage);

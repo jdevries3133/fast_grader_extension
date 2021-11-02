@@ -1,14 +1,14 @@
 import { HtmxEventDetail } from "./htmxTypes";
 import { applyPatch } from "./macWorkaround";
-import { askBackgroundTo, MessageTypes } from "./background";
-import { wait } from "./utils";
+import { getToken, sendMessage, MessageTypes } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
-
-let AUTH_TOKEN: null | string = null;
 
 async function performSync(e: Event) {
   if (e instanceof Element) {
-    const result = await askBackgroundTo(MessageTypes.PERFORM_SYNC);
+    const result = await sendMessage({
+      kind: MessageTypes.PERFORM_SYNC,
+      payload: {},
+    });
     console.log(result);
   }
 }
@@ -20,19 +20,6 @@ function openClassFast() {
     url: BACKEND_BASE_URL,
   });
 }
-
-document.body.addEventListener(
-  "htmx:configRequest",
-  async (event: CustomEvent<HtmxEventDetail>) => {
-    while (!AUTH_TOKEN) {
-      await wait(100);
-    }
-    if (AUTH_TOKEN) {
-      event.detail.headers["Authorization"] = `Token ${AUTH_TOKEN}`;
-      event.detail.headers["Accept"] = "text/html";
-    }
-  }
-);
 
 /**
  * Apparently content-security policies are so DAMN psychophantic that they
@@ -94,6 +81,18 @@ document.body.addEventListener("htmx:afterSwap", () => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-  AUTH_TOKEN = await askBackgroundTo(MessageTypes.GET_TOKEN);
   applyPatch();
 });
+
+document.body.addEventListener(
+  "htmx:configRequest",
+  async (event: CustomEvent<HtmxEventDetail>) => {
+    try {
+      const token = await getToken();
+      event.detail.headers["Authorization"] = `Token ${token}`;
+      event.detail.headers["Accept"] = "text/html";
+    } catch (e) {
+      console.error(e);
+    }
+  }
+);

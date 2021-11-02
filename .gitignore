@@ -3,3 +3,4 @@ dist
 *.pem
 node_modules
 coverage
+notes.md

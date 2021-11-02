@@ -1,4 +1,4 @@
-import { askBackgroundTo, MessageTypes } from "./background";
+import { sendMessage, MessageTypes } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
 export async function wait(ms: number) {
@@ -11,7 +11,7 @@ export async function backendRequest(
   data?: object,
   headers?: HeadersInit
 ): Promise<Response> {
-  const tok = await askBackgroundTo(MessageTypes.GET_TOKEN);
+  const tok = await sendMessage({ kind: MessageTypes.GET_TOKEN });
   if (tok) {
     headers = {
       Authorization: `Token ${tok}`,
@@ -45,7 +45,12 @@ export async function logToBackend(
     wasDomDumped = true;
     payload.dom_dump = `<html>${document.head.outerHTML}${document.body.outerHTML}`;
   }
-  backendRequest("/ext/log_error/", "POST", payload);
+  try {
+    const res = await backendRequest("/ext/log_error/", "POST", payload);
+    console.log(await res.json());
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 /**

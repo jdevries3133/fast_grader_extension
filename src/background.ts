@@ -1,23 +1,11 @@
 import { logToBackend } from "./utils";
 import { BACKEND_BASE_URL } from "./constants";
-
-export enum MessageTypes {
-  GET_TOKEN,
-  PERFORM_SYNC,
-}
-
-/**
- * Other modules consume this in order to send messages to this module, with
- * constrained types. browser.runtime.sendMessage should never be used directly
- */
-export async function askBackgroundTo(do_: MessageTypes) {
-  return await browser.runtime.sendMessage(null, do_);
-}
+import { MessageTypes, Message } from "./messaging";
 
 /**
  * checks localStorage for a token, or calls the login function to get one.
  */
-async function getToken(): Promise<string> {
+async function fetchToken(): Promise<string> {
   const result: { ["token"]: string } | undefined =
     await browser.storage.sync.get("token");
   let tok: string | undefined = result?.token;
@@ -39,10 +27,10 @@ async function login(nRetries = 0): Promise<string> {
   // extension on other platforms, this log call will remind me if I forget
   // to fix this!
   if (global.chrome === undefined) {
-    logToBackend("chrome identity API is not present");
+    logToBackend("chrome API is not present");
     return "";
   }
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     chrome.identity.getAuthToken(
       {
         interactive: true,
@@ -52,7 +40,13 @@ async function login(nRetries = 0): Promise<string> {
           logToBackend(
             `error while getting oauth token: ${chrome.runtime.lastError}`
           );
-          reject("chrome error");
+          resolve(null);
+        }
+        if (token === null || token === undefined) {
+          logToBackend(
+            "chrome identity api called callback with null or undefined token"
+          );
+          resolve(null);
         }
         try {
           // we intentionally cannot call utils.backendRequest because
@@ -73,7 +67,7 @@ async function login(nRetries = 0): Promise<string> {
           if (nRetries < 5) {
             return login();
           } else {
-            reject(e);
+            resolve(null);
           }
         }
       }
@@ -81,12 +75,17 @@ async function login(nRetries = 0): Promise<string> {
   });
 }
 
-async function handleMessage(request: MessageTypes, _: any) {
-  switch (request) {
+async function handleMessage(
+  message: Message<any>,
+  // TODO: this arg contains details about who the message is coming from,
+  // which must be read to validate against XSS via out-of-band messages
+  _: any
+) {
+  switch (message.kind) {
     case MessageTypes.GET_TOKEN:
-      return getToken();
+      return fetchToken();
   }
-  return true;
+  return null;
 }
 
 browser.runtime.onMessage.addListener(handleMessage);
