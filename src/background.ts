@@ -1,4 +1,4 @@
-import { logToBackend } from "./utils";
+import { logToBackend } from "./api";
 import { BACKEND_BASE_URL } from "./constants";
 import { MessageTypes, Message } from "./messaging";
 
@@ -14,6 +14,18 @@ async function fetchToken(): Promise<string> {
     browser.storage.sync.set({ token: tok });
   }
   return tok;
+}
+
+/**
+ * Remove the localStorage token, which must be done, for example, in cases
+ * where the token causes a 403 error.
+ */
+async function clearToken(): Promise<null> {
+  try {
+    return await browser.storage.sync.remove("token");
+  } catch (e) {
+    logToBackend("failed to remove token");
+  }
 }
 
 /**
@@ -49,7 +61,7 @@ async function login(nRetries = 0): Promise<string> {
           resolve(null);
         }
         try {
-          // we intentionally cannot call utils.backendRequest because
+          // we intentionally cannot call api.backendRequest because
           // it depends on this function to provide the token
           const res = await fetch(
             `${BACKEND_BASE_URL}/accounts/dj_rest_auth/google/`,
@@ -81,8 +93,12 @@ async function handleMessage(
   // which must be read to validate against XSS via out-of-band messages
   _: any
 ) {
+  debugger;
   switch (message.kind) {
     case MessageTypes.GET_TOKEN:
+      return fetchToken();
+    case MessageTypes.CLEAR_TOKEN:
+      await clearToken();
       return fetchToken();
   }
   return null;

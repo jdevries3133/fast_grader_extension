@@ -1,4 +1,4 @@
-import { wait } from "./utils";
+import { wait } from "./util";
 
 test("wait", async () => {
   let foo = "bar";

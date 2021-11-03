@@ -31,11 +31,10 @@ function openClassFast() {
  * first event listener will capture the event and stop its' propagation.
  * This helps in case we leak a listener by accident.
  */
-type EventName = keyof HTMLElementEventMap;
 const eventRegistry: Array<{
   selector: string;
   handler: EventListener;
-  event: EventName;
+  event: keyof HTMLElementEventMap;
   active?: boolean;
 }> = [
   {
@@ -80,19 +79,16 @@ document.body.addEventListener("htmx:afterSwap", () => {
   });
 });
 
-document.addEventListener("DOMContentLoaded", async () => {
-  applyPatch();
-});
-
+let AUTH_TOKEN: string = "";
+getToken().then((tok) => (AUTH_TOKEN = tok));
 document.body.addEventListener(
   "htmx:configRequest",
-  async (event: CustomEvent<HtmxEventDetail>) => {
-    try {
-      const token = await getToken();
-      event.detail.headers["Authorization"] = `Token ${token}`;
-      event.detail.headers["Accept"] = "text/html";
-    } catch (e) {
-      console.error(e);
-    }
+  (event: CustomEvent<HtmxEventDetail>) => {
+    event.detail.headers["Authorization"] = `Token ${AUTH_TOKEN}`;
+    event.detail.headers["Accept"] = "text/html";
   }
 );
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyPatch();
+});

@@ -1,41 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
     <script src="https://unpkg.com/htmx.org@1.6.0/dist/htmx.js"></script>
 
-
     <!-- fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200;300;400;500;600;700;800;900&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap"
-      rel="stylesheet">
+      rel="stylesheet"
+    />
 
     <!-- TAILWIND
 
-     it is unfortunately necessary to get two very similar tailwind stylesheets;
-     one stylesheet that this project generates, and also the one from the
-     backend. This is because most of the UI is injected by htmx, and we won't
-     know to generate those styles since that html is not part of this
+     it is unfortunately necessary to get two very similar tailwind
+     stylesheets; one stylesheet that this project generates, and also the one
+     from the backend. This is because most of the UI is injected by htmx, and
+     we won't know to generate those styles since that html is not part of this
      repository. -->
     <link
-        href="http://localhost:8000/static/css/dist/styles.css"
-        rel="stylesheet">
-    <link href="/styles.css" rel="stylesheet">
-
+      href="http://localhost:8000/static/css/dist/styles.css"
+      rel="stylesheet"
+    />
+    <link href="/styles.css" rel="stylesheet" />
   </head>
 
-  <body class="p-2 bg-gradient-to-tr from-lime-100 via-green-100 to-lime-200 bg-blur">
-    <div hx-trigger="load" hx-get="http://localhost:8000/ext/">
-      <div>
-        <div hx-get="/loading.html" hx-trigger="load"></div>
+  <body
+    class="
+      p-2
+      bg-gradient-to-tr
+      from-lime-100
+      via-green-100
+      to-lime-200
+      bg-blur
+    "
+  >
+    <div hx-trigger="load delay:100ms" hx-get="http://localhost:8000/ext/">
+      <!-- loading indicator -->
+      <div
+        class="
+          fixed
+          top-0
+          left-0
+          flex
+          items-center
+          justify-center
+          w-full
+          h-full
+          transiton
+        "
+      >
+        <div
+          class="
+            absolute
+            w-full
+            h-full
+            bg-gray-900
+            opacity-50
+            modal-overlay
+            blur-sm
+          "
+        ></div>
+        <div
+          class="
+            container
+            flex flex-col
+            items-center
+            justify-center
+            w-full
+            h-full
+          "
+        >
+          <div class="z-50 p-4 mb-4 bg-gray-200 rounded-lg">
+            <h1>Loading</h1>
+          </div>
+          <div class="lds-roller">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
       </div>
     </div>
     <script src="browser-polyfill.js"></script>
     <script src="popup.bundle.js"></script>
   </body>
 </html>
-

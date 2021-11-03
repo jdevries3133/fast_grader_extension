@@ -1,5 +1,6 @@
 import { MessageTypes } from "./messaging";
-import { logToBackend, wait } from "./utils";
+import { logToBackend } from "./api";
+import { wait } from "./util";
 
 /**
  * Return the table with all students in it.
