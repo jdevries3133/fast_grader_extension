@@ -9,18 +9,18 @@ export type Message<T> = {
   payload?: T;
 };
 
-/**
- * Other modules consume this in order to send messages to this module, with
- * constrained types. browser.runtime.sendMessage should never be used directly
- */
-export async function sendMessage(do_: Message<any>) {
+async function _sendMessage(do_: Message<any>) {
   return await browser.runtime.sendMessage(null, do_);
 }
 
 export async function getToken(): Promise<string> {
-  return sendMessage({ kind: MessageTypes.GET_TOKEN });
+  return _sendMessage({ kind: MessageTypes.GET_TOKEN });
 }
 
 export async function getNewToken(): Promise<string> {
-  return sendMessage({ kind: MessageTypes.CLEAR_TOKEN });
+  return _sendMessage({ kind: MessageTypes.CLEAR_TOKEN });
+}
+
+export async function performSync(payload: any): Promise<boolean> {
+  return _sendMessage({ payload, kind: MessageTypes.PERFORM_SYNC });
 }

@@ -1,19 +1,20 @@
 import { HtmxEventDetail } from "./htmxTypes";
 import { applyPatch } from "./macWorkaround";
-import { getToken, sendMessage, MessageTypes } from "./messaging";
+import { getToken, performSync as sendPerfSyncMsg } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
 async function performSync(e: Event) {
   if (e instanceof Element) {
-    const result = await sendMessage({
-      kind: MessageTypes.PERFORM_SYNC,
-      payload: {},
-    });
-    console.log(result);
+    const isSuccess = await sendPerfSyncMsg();
+    throw new Error(
+      `not implemented; sync was ${isSuccess ? "" : "not"} successful`
+    );
   }
 }
 
-function haltSync() {}
+function haltSync() {
+  console.log("connected");
+}
 
 function openClassFast() {
   browser.tabs.create({

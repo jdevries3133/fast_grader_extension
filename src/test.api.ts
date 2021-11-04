@@ -1,10 +1,10 @@
 import { fetchMock } from "./setupTestEnv";
 import { logToBackend, backendRequest } from "./api";
-import { sendMessage } from "./messaging";
+import { getToken } from "./messaging";
 
 jest.mock("./messaging");
-const sendMessageAny = <any>sendMessage;
-const mockSendMessage = <jest.Mock<typeof sendMessageAny>>sendMessageAny;
+const getTokenAny = <any>getToken;
+const mockSendMessage = <jest.Mock<typeof getTokenAny>>getTokenAny;
 
 describe("logToBackend", () => {
   beforeAll(() => fetchMock.mockClear());
@@ -127,7 +127,7 @@ describe("backendRequest", () => {
     });
   });
 
-  it("handles exceptions from sendMessage", async () => {
+  it("handles exceptions from getToken", async () => {
     makeFetch(fetchOpts.SUCCEED);
     mockSendMessage.mockImplementation(async () => {
       throw new Error("foo");
@@ -144,7 +144,7 @@ describe("backendRequest", () => {
       });
     } catch (e) {
       throw new Error(
-        `backendRequest failed to catch exception from sendMessage: ${e}`
+        `backendRequest failed to catch exception from getToken: ${e}`
       );
     }
   });

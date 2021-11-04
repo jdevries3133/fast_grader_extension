@@ -1,4 +1,4 @@
-import { sendMessage, MessageTypes } from "./messaging";
+import { getToken } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
 export async function backendRequest(
@@ -9,7 +9,7 @@ export async function backendRequest(
 ): Promise<Response> {
   let tok: string = "";
   try {
-    tok = await sendMessage({ kind: MessageTypes.GET_TOKEN });
+    tok = await getToken();
   } catch (e) {}
 
   headers = {

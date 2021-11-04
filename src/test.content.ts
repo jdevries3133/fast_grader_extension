@@ -1,6 +1,9 @@
 import { wait } from "./util";
-import { getParentTable } from "./content";
+import { exportedForTesting } from "./content";
 import { logToBackend } from "./api";
+import { Message, MessageTypes } from "./messaging";
+
+const { getParentTable, performSync, handleMessage } = exportedForTesting;
 
 jest.mock("./util");
 jest.mock("./api");
