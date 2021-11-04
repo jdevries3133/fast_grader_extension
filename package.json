@@ -55,6 +55,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
-    "@babel/runtime": "^7.16.0"
+    "@babel/runtime": "^7.16.0",
+    "serialize-error": "^8.1.0"
   }
 }
