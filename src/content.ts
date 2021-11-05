@@ -5,7 +5,7 @@ import { wait } from "./util";
 /**
  * Return the table with all students in it.
  */
-export async function getParentTable(n_retries = 0): Promise<Element> {
+async function getParentTable(n_retries = 0): Promise<Element> {
   if (n_retries > 5) {
     throw new Error("cannot find parent table");
   }
@@ -42,12 +42,17 @@ export async function getParentTable(n_retries = 0): Promise<Element> {
   throw new Error(msg.join(" "));
 }
 
-export async function performSync() {}
+/**
+ * Return a boolean indicating success or failure.
+ */
+async function performSync(gradeData: object): Promise<boolean> {
+  return true;
+}
 
 async function handleMessage(request: Message<any>, _?: any) {
   switch (request.kind) {
     case MessageTypes.PERFORM_SYNC:
-      return performSync();
+      return performSync(request.payload);
   }
 }
 

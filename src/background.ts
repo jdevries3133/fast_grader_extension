@@ -93,7 +93,6 @@ async function handleMessage(
   // which must be read to validate against XSS via out-of-band messages
   _: any
 ) {
-  debugger;
   switch (message.kind) {
     case MessageTypes.GET_TOKEN:
       return fetchToken();

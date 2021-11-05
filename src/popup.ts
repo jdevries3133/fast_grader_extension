@@ -1,20 +1,73 @@
+import { serializeError } from "serialize-error";
+
 import { HtmxEventDetail } from "./htmxTypes";
-import { applyPatch } from "./macWorkaround";
-import { getToken, performSync as sendPerfSyncMsg } from "./messaging";
+import { applyPatch } from "./vendor/macWorkaround";
+import {
+  backendRequest,
+  GradingSessionDetailResponse,
+  logToBackend,
+} from "./api";
+import { getToken, performSync } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
-async function performSync(e: Event) {
-  if (e instanceof Element) {
-    const isSuccess = await sendPerfSyncMsg();
-    throw new Error(
-      `not implemented; sync was ${isSuccess ? "" : "not"} successful`
-    );
+/**
+ * Indicate to the user that the sync action was successful
+ */
+function syncSuccessful() {}
+
+/**
+ * Indicate to the user that the sync action did not succeed
+ */
+function syncFailed() {}
+
+/**
+ * Called after we have validated that the current tab location is correct
+ * and the content script is ready to begin syncing.
+ */
+async function beginSync(data: GradingSessionDetailResponse) {
+  const isSuccess = await performSync(data);
+  if (isSuccess) {
+    syncSuccessful();
+  } else {
+    throw new Error("sync failed");
   }
 }
 
-function haltSync() {
-  console.log("connected");
+/**
+ * Navigate user to the correct url, and verify that the content script is
+ * running.
+ */
+async function prepareToSync(data: GradingSessionDetailResponse) {
+  const res = await browser.tabs.query({ currentWindow: true });
+  // TODO: complete implementation
 }
+
+/* inner handler that does not catch errors */
+async function _syncRequestHandlerUnsafe(e: Event) {
+  if (!(e.target instanceof Element)) {
+    syncFailed();
+    return;
+  }
+  const pk = e.target.getAttribute("data-pk");
+
+  const res = await backendRequest(`/grader/session/${pk}/`);
+  const data = <GradingSessionDetailResponse>await res.json();
+
+  await prepareToSync(data);
+  await beginSync(data);
+}
+
+async function syncRequestHandler(e: Event) {
+  try {
+    await _syncRequestHandlerUnsafe(e);
+    syncSuccessful();
+  } catch (e) {
+    logToBackend(`sync failed due to exception: ${e}`, serializeError(e));
+    syncFailed();
+  }
+}
+
+function haltSync() {}
 
 function openClassFast() {
   browser.tabs.create({
@@ -40,7 +93,7 @@ const eventRegistry: Array<{
 }> = [
   {
     selector: ".syncSessionButton",
-    handler: performSync,
+    handler: syncRequestHandler,
     event: "click",
   },
   {
@@ -93,3 +146,7 @@ document.body.addEventListener(
 document.addEventListener("DOMContentLoaded", () => {
   applyPatch();
 });
+
+export const exportedForTesting = {
+  syncRequestHandler,
+};

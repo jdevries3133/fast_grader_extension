@@ -15,7 +15,7 @@ describe("logToBackend", () => {
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo"}',
       headers: {
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     });
@@ -26,7 +26,7 @@ describe("logToBackend", () => {
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo","dom_dump":"<html><head></head><body></body>"}',
       headers: {
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     });
@@ -37,7 +37,7 @@ describe("logToBackend", () => {
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo"}',
       headers: {
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     });
@@ -50,7 +50,7 @@ describe("logToBackend", () => {
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo","extra_data":{"extra":"data"}}',
       headers: {
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     });
@@ -87,12 +87,26 @@ describe("backendRequest", () => {
     const res = await backendRequest("", "GET");
     expect(res.status).toBe(200);
   });
+  it("allows the use of any http method", async () => {
+    makeFetch(fetchOpts.SUCCEED);
+    ["GET", "POST", "PUT", "DELETE", "PATCH"].forEach(async (verb) => {
+      await backendRequest("", verb);
+      expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
+        body: undefined,
+        headers: {
+          Accept: "application/json",
+        },
+        method: verb,
+      });
+    });
+  });
+
   it("does not swallow thrown errors", async () => {
     makeFetch(fetchOpts.THROW);
     try {
-      await backendRequest("", "GET");
+      await backendRequest("");
 
-      fail("backendRequest swallowed error thrown from fetch");
+      throw new Error("backendRequest swallowed error thrown from fetch");
     } catch (e) {
       expect(e.message).toBe("foo");
     }
@@ -101,13 +115,13 @@ describe("backendRequest", () => {
     makeFetch(fetchOpts.SUCCEED);
     mockSendMessage.mockImplementation(async () => "footoken");
 
-    await backendRequest("", "GET");
+    await backendRequest("");
 
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
       body: undefined,
       headers: {
         Authorization: "Token footoken",
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "GET",
     });
@@ -116,12 +130,12 @@ describe("backendRequest", () => {
     makeFetch(fetchOpts.SUCCEED);
     mockSendMessage.mockImplementation(async () => null);
 
-    await backendRequest("", "GET");
+    await backendRequest("");
 
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
       body: undefined,
       headers: {
-        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       method: "GET",
     });
@@ -134,11 +148,11 @@ describe("backendRequest", () => {
     });
 
     try {
-      await backendRequest("", "GET");
+      await backendRequest("");
       expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
         body: undefined,
         headers: {
-          "Content-Type": "application/json",
+          Accept: "application/json",
         },
         method: "GET",
       });

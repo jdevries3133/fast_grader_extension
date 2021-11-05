@@ -1,16 +1,15 @@
 import { wait } from "./util";
 import { exportedForTesting } from "./content";
 import { logToBackend } from "./api";
-import { Message, MessageTypes } from "./messaging";
 
-const { getParentTable, performSync, handleMessage } = exportedForTesting;
+const { getParentTable } = exportedForTesting;
 
 jest.mock("./util");
 jest.mock("./api");
 
 // placate typescript
 const _mockWait = <any>wait;
-const mockWait = <jest.Mock<typeof wait>>_mockWait;
+const mockWait = <jest.MockedFunction<typeof wait>>_mockWait;
 
 const { wait: originalWait } = jest.requireActual("./util");
 
@@ -58,7 +57,6 @@ describe("getParentTable", () => {
   });
 
   it("stops recursing after 5 tries, and throws an error", async () => {
-    // @ts-ignore
     mockWait.mockImplementation(async () => null);
 
     await expect(getParentTable()).rejects.toThrow();

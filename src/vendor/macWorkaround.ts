@@ -1,3 +1,4 @@
+/* istanbul ignore next */
 export async function applyPatch() {
   /**
    * Temporary workaround for secondary monitors on MacOS where redraws don't happen
@@ -21,9 +22,9 @@ export async function applyPatch() {
           animation: redraw 1s linear infinite;
         }
       `);
-    document.adoptedStyleSheets = [
-      ...document.adoptedStyleSheets,
-      fontFaceSheet,
-    ];
+    // @ts-ignore
+    const existingSheets = [...document?.adoptedStyleSheets];
+    // @ts-ignore
+    document.adoptedStyleSheets = [...existingSheets, fontFaceSheet];
   }
 }

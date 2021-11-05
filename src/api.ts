@@ -1,9 +1,31 @@
 import { getToken } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
+export type SubmissionResource = {
+  pk: number;
+  api_student_profile_id: string;
+  api_student_submission_id: string;
+  submission: Array<string>;
+  student_name: string;
+  grade: number;
+  comment: string;
+};
+
+export type GradingSessionDetailResponse = {
+  session: {
+    pk: number;
+    api_assignment_id: string;
+    max_grade: number;
+    teacher_template: string;
+    average_grade: number;
+    google_classroom_detail_view_url: string;
+    submissions: Array<SubmissionResource>;
+  };
+};
+
 export async function backendRequest(
   route: string,
-  method: string,
+  method: string = "GET",
   data?: object,
   headers?: HeadersInit
 ): Promise<Response> {
@@ -13,7 +35,7 @@ export async function backendRequest(
   } catch (e) {}
 
   headers = {
-    "Content-Type": "application/json",
+    Accept: "application/json",
     ...headers,
   };
   if (tok) {
@@ -28,8 +50,8 @@ export async function backendRequest(
 }
 
 /**
- * Send log message with some standard context to the backend. The first
- * log will also dump the DOM to the backend for debugging.
+ * Send log message with optional additional context to the backend, like
+ * a json blob or a dump of the DOM content.
  */
 export async function logToBackend(
   msg: string,
