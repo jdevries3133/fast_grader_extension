@@ -21,6 +21,10 @@ export const browserMocks = {
   tabs: {
     create: jest.fn(),
     query: jest.fn(),
+    update: jest.fn(),
+  },
+  windows: {
+    update: jest.fn(),
   },
 };
 

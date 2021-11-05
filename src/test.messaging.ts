@@ -6,6 +6,14 @@ import {
   performSync,
 } from "./messaging";
 
+jest.mock("./messaging", () => {
+  const original = jest.requireActual("./messaging");
+  return {
+    ...original,
+    _pingContentScript: jest.fn(),
+  };
+});
+
 describe("messaging methods", () => {
   test("getToken", async () => {
     const expectedMsg: Message<void> = {

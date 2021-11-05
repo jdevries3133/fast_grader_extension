@@ -7,7 +7,7 @@ import {
   GradingSessionDetailResponse,
   logToBackend,
 } from "./api";
-import { getToken, performSync } from "./messaging";
+import { contentScriptReady, getToken, performSync } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 
 /**
@@ -38,8 +38,23 @@ async function beginSync(data: GradingSessionDetailResponse) {
  * running.
  */
 async function prepareToSync(data: GradingSessionDetailResponse) {
-  const res = await browser.tabs.query({ currentWindow: true });
-  // TODO: complete implementation
+  const res = await browser.tabs.query({
+    url: data.session.google_classroom_detail_view_url,
+  });
+  if (res.length) {
+    const { tabId, windowId } = res[0];
+    if (tabId && windowId) {
+      await browser.windows.update(windowId, { focused: true });
+      await browser.tabs.update(tabId, { active: true });
+      await contentScriptReady();
+      return;
+    }
+  }
+  // fallthrough means that we need to create a new tab
+  await browser.tabs.create({
+    url: data.session.google_classroom_detail_view_url,
+  });
+  await contentScriptReady();
 }
 
 /* inner handler that does not catch errors */
@@ -61,8 +76,8 @@ async function syncRequestHandler(e: Event) {
   try {
     await _syncRequestHandlerUnsafe(e);
     syncSuccessful();
-  } catch (e) {
-    logToBackend(`sync failed due to exception: ${e}`, serializeError(e));
+  } catch (err) {
+    logToBackend(`sync failed due to exception: ${err}`, serializeError(err));
     syncFailed();
   }
 }
@@ -149,4 +164,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
 export const exportedForTesting = {
   syncRequestHandler,
+  _syncRequestHandlerUnsafe,
 };

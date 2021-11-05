@@ -3,6 +3,19 @@ import { logToBackend } from "./api";
 import { wait } from "./util";
 
 /**
+ * If we can find the parent table, we are able to do the rest of the sync
+ * operation
+ */
+async function isReady(): Promise<boolean> {
+  try {
+    await getParentTable();
+    return true;
+  } finally {
+    return false;
+  }
+}
+
+/**
  * Return the table with all students in it.
  */
 async function getParentTable(n_retries = 0): Promise<Element> {
@@ -52,7 +65,9 @@ async function performSync(gradeData: object): Promise<boolean> {
 async function handleMessage(request: Message<any>, _?: any) {
   switch (request.kind) {
     case MessageTypes.PERFORM_SYNC:
-      return performSync(request.payload);
+      return await performSync(request.payload);
+    case MessageTypes.PING:
+      return await isReady();
   }
 }
 
