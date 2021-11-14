@@ -1,9 +1,9 @@
 import {
-  MessageTypes,
-  Message,
-  getToken,
-  getNewToken,
-  performSync,
+  BackgroundMessageTypes,
+  RuntimeMsg,
+  getTokenMsg,
+  getNewTokenMsg,
+  performSyncMsg,
 } from "./messaging";
 
 jest.mock("./messaging", () => {
@@ -15,34 +15,26 @@ jest.mock("./messaging", () => {
 });
 
 describe("messaging methods", () => {
-  test("getToken", async () => {
-    const expectedMsg: Message<void> = {
-      kind: MessageTypes.GET_TOKEN,
+  test("getTokenMsg", async () => {
+    const expectedMsg: RuntimeMsg = {
+      kind: BackgroundMessageTypes.GET_TOKEN,
     };
-    await getToken();
+    await getTokenMsg();
     expect(browser.runtime.sendMessage).toHaveBeenCalledWith(null, expectedMsg);
   });
-  test("getNewToken", async () => {
-    const expectedMsg: Message<void> = {
-      kind: MessageTypes.CLEAR_TOKEN,
+  test("getNewTokenMsg", async () => {
+    const expectedMsg: RuntimeMsg = {
+      kind: BackgroundMessageTypes.CLEAR_TOKEN,
     };
-    await getNewToken();
+    await getNewTokenMsg();
     expect(browser.runtime.sendMessage).toHaveBeenCalledWith(null, expectedMsg);
   });
-  test("performSync", async () => {
-    const expectedMsg: Message<object> = {
-      kind: MessageTypes.PERFORM_SYNC,
-      payload: {
-        submissions: [
-          {
-            name: "john",
-            grade: 45,
-            comment: "wohoo",
-          },
-        ],
-      },
+  test("performSyncMsg", async () => {
+    const expectedMsg: RuntimeMsg = {
+      kind: BackgroundMessageTypes.PERFORM_SYNC,
+      payload: { pk: "23" },
     };
-    await performSync(expectedMsg.payload);
+    await performSyncMsg(expectedMsg.payload.pk);
     expect(browser.runtime.sendMessage).toHaveBeenCalledWith(null, expectedMsg);
   });
 });

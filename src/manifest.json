@@ -25,7 +25,7 @@
   "content_scripts": [
     {
       "matches": ["*://classroom.google.com/*"],
-      "js": ["content.bundle.js"]
+      "js": ["browser-polyfill.js", "content.bundle.js"]
     }
   ]
 }

@@ -1,5 +1,5 @@
-import { MessageTypes, Message } from "./messaging";
-import { logToBackend } from "./api";
+import { ContentMessageTypes, TabMsg } from "./messaging";
+import { GradingSessionDetailResponse, logToBackend } from "./api";
 import { wait } from "./util";
 
 /**
@@ -7,6 +7,7 @@ import { wait } from "./util";
  * operation
  */
 async function isReady(): Promise<boolean> {
+  console.log("pong");
   try {
     await getParentTable();
     return true;
@@ -45,7 +46,7 @@ async function getParentTable(n_retries = 0): Promise<Element> {
   try {
     // try to send string representations of the elements for additional context
     const stringRepresentations = [];
-    for (let i = 0; i < possibleTables.length; i++) {
+    for (let i = 1; i < possibleTables.length; i++) {
       const el = <HTMLElement>possibleTables[i].cloneNode(false);
       stringRepresentations.push(el.outerHTML);
     }
@@ -58,15 +59,18 @@ async function getParentTable(n_retries = 0): Promise<Element> {
 /**
  * Return a boolean indicating success or failure.
  */
-async function performSync(gradeData: object): Promise<boolean> {
+async function performSync(
+  sessionData: GradingSessionDetailResponse
+): Promise<boolean> {
+  console.log("hi", sessionData);
   return true;
 }
 
-async function handleMessage(request: Message<any>, _?: any) {
-  switch (request.kind) {
-    case MessageTypes.PERFORM_SYNC:
-      return await performSync(request.payload);
-    case MessageTypes.PING:
+async function handleMessage(msg: TabMsg, _?: any) {
+  switch (msg.kind) {
+    case ContentMessageTypes.SYNC:
+      return await performSync(msg.payload);
+    case ContentMessageTypes.PING:
       return await isReady();
   }
 }

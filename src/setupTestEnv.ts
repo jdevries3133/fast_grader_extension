@@ -4,6 +4,8 @@ import "@testing-library/jest-dom";
 import "mockzilla-webextension";
 import "mockzilla";
 
+import { getMockTabQueryFunc } from "./testUtils";
+
 export const browserMocks = {
   runtime: {
     onMessage: {
@@ -20,11 +22,14 @@ export const browserMocks = {
   },
   tabs: {
     create: jest.fn(),
-    query: jest.fn(),
+    query: jest.fn().mockImplementation(getMockTabQueryFunc()),
     update: jest.fn(),
   },
   windows: {
     update: jest.fn(),
+  },
+  extension: {
+    getBackgroundPage: jest.fn().mockImplementation(() => false),
   },
 };
 

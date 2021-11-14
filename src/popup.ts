@@ -1,85 +1,23 @@
-import { serializeError } from "serialize-error";
-
-import { HtmxEventDetail } from "./htmxTypes";
 import { applyPatch } from "./vendor/macWorkaround";
-import {
-  backendRequest,
-  GradingSessionDetailResponse,
-  logToBackend,
-} from "./api";
-import { contentScriptReady, getToken, performSync } from "./messaging";
+import { getTokenMsg, performSyncMsg } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
-
-/**
- * Indicate to the user that the sync action was successful
- */
-function syncSuccessful() {}
 
 /**
  * Indicate to the user that the sync action did not succeed
  */
-function syncFailed() {}
-
-/**
- * Called after we have validated that the current tab location is correct
- * and the content script is ready to begin syncing.
- */
-async function beginSync(data: GradingSessionDetailResponse) {
-  const isSuccess = await performSync(data);
-  if (isSuccess) {
-    syncSuccessful();
-  } else {
-    throw new Error("sync failed");
-  }
+function syncFailed() {
+  const el = document.createElement("div");
+  el.innerHTML = '<p id="failMsg">Sync failed. Please try again</p>';
+  document.body.appendChild(el);
 }
 
-/**
- * Navigate user to the correct url, and verify that the content script is
- * running.
- */
-async function prepareToSync(data: GradingSessionDetailResponse) {
-  const res = await browser.tabs.query({
-    url: data.session.google_classroom_detail_view_url,
-  });
-  if (res.length) {
-    const { tabId, windowId } = res[0];
-    if (tabId && windowId) {
-      await browser.windows.update(windowId, { focused: true });
-      await browser.tabs.update(tabId, { active: true });
-      await contentScriptReady();
-      return;
-    }
-  }
-  // fallthrough means that we need to create a new tab
-  await browser.tabs.create({
-    url: data.session.google_classroom_detail_view_url,
-  });
-  await contentScriptReady();
-}
-
-/* inner handler that does not catch errors */
-async function _syncRequestHandlerUnsafe(e: Event) {
+function syncRequestHandler(e: Event) {
   if (!(e.target instanceof Element)) {
     syncFailed();
     return;
   }
   const pk = e.target.getAttribute("data-pk");
-
-  const res = await backendRequest(`/grader/session/${pk}/`);
-  const data = <GradingSessionDetailResponse>await res.json();
-
-  await prepareToSync(data);
-  await beginSync(data);
-}
-
-async function syncRequestHandler(e: Event) {
-  try {
-    await _syncRequestHandlerUnsafe(e);
-    syncSuccessful();
-  } catch (err) {
-    logToBackend(`sync failed due to exception: ${err}`, serializeError(err));
-    syncFailed();
-  }
+  return performSyncMsg(pk);
 }
 
 function haltSync() {}
@@ -149,7 +87,7 @@ document.body.addEventListener("htmx:afterSwap", () => {
 });
 
 let AUTH_TOKEN: string = "";
-getToken().then((tok) => (AUTH_TOKEN = tok));
+getTokenMsg().then((tok) => (AUTH_TOKEN = tok));
 document.body.addEventListener(
   "htmx:configRequest",
   (event: CustomEvent<HtmxEventDetail>) => {
@@ -164,5 +102,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
 export const exportedForTesting = {
   syncRequestHandler,
-  _syncRequestHandlerUnsafe,
 };
