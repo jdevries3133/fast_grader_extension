@@ -1,10 +1,27 @@
 import { fetchMock } from "./setupTestEnv";
 import { logToBackend, backendRequest } from "./api";
-import { getToken } from "./messaging";
 
+// setup serializeError mock
+import { ErrorObject, serializeError as _se } from "serialize-error";
+jest.mock("serialize-error");
+const _se_tmp = <any>_se;
+const serializeError = <jest.MockedFunction<typeof _se>>_se_tmp;
+
+// setup getToken mock
+import { getTokenMsg as _gt } from "./messaging";
 jest.mock("./messaging");
-const getTokenAny = <any>getToken;
-const mockSendMessage = <jest.Mock<typeof getTokenAny>>getTokenAny;
+const _gt_tmp = <any>_gt;
+const getTokenMsg = <jest.MockedFunction<typeof _gt>>_gt_tmp;
+
+// setup background modk
+import { inBackgroundScript as _ibs, fetchToken as _ft } from "./background";
+jest.mock("./background");
+const _ibst = <any>_ibs;
+const inBackgroundScript = <jest.MockedFunction<typeof _ibs>>_ibst;
+const _ftt = <any>_ft;
+const fetchToken = <jest.MockedFunction<typeof _ft>>_ftt;
+
+inBackgroundScript.mockImplementation(() => false);
 
 describe("logToBackend", () => {
   beforeAll(() => fetchMock.mockClear());
@@ -22,7 +39,7 @@ describe("logToBackend", () => {
   });
 
   it("responds to dumDom=true", async () => {
-    await logToBackend("foo", null, true);
+    await logToBackend("foo", null, null, true);
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo","dom_dump":"<html><head></head><body></body>"}',
       headers: {
@@ -33,7 +50,7 @@ describe("logToBackend", () => {
   });
 
   it("responds to dumpDom=false", async () => {
-    await logToBackend("foo", null, false);
+    await logToBackend("foo", null, null, false);
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo"}',
       headers: {
@@ -49,6 +66,20 @@ describe("logToBackend", () => {
     });
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo","extra_data":{"extra":"data"}}',
+      headers: {
+        Accept: "application/json",
+      },
+      method: "POST",
+    });
+  });
+  it("can take and serialize an Error object in the json argument", async () => {
+    serializeError.mockImplementation(() => {
+      return <ErrorObject>{ name: "foo" };
+    });
+    const err = new Error("foo");
+    await logToBackend("error!", null, err);
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
+      body: '{"message":"error!","extra_data":{"name":"foo"}}',
       headers: {
         Accept: "application/json",
       },
@@ -78,6 +109,7 @@ describe("backendRequest", () => {
     }
   }
   beforeAll(() => {
+    getTokenMsg.mockImplementation(async () => "defaultToken");
     fetchMock.mockClear();
   });
   afterEach(() => fetchMock.mockClear());
@@ -92,9 +124,10 @@ describe("backendRequest", () => {
     ["GET", "POST", "PUT", "DELETE", "PATCH"].forEach(async (verb) => {
       await backendRequest("", verb);
       expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
-        body: undefined,
         headers: {
           Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: "Token defaultToken",
         },
         method: verb,
       });
@@ -111,16 +144,31 @@ describe("backendRequest", () => {
       expect(e.message).toBe("foo");
     }
   });
+
+  it("does not override auth header if it is provided as an argument", async () => {
+    makeFetch(fetchOpts.SUCCEED);
+    await backendRequest("", "GET", null, {
+      Authorization: "custom",
+    });
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
+      headers: {
+        Accept: "application/json",
+        Authorization: "custom",
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    });
+  });
+
   it("gets the auth token and includes it as a request header", async () => {
     makeFetch(fetchOpts.SUCCEED);
-    mockSendMessage.mockImplementation(async () => "footoken");
+    getTokenMsg.mockImplementation(async () => "footoken");
 
     await backendRequest("");
 
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
-      body: undefined,
       headers: {
-        Authorization: "Token footoken",
+        "Content-Type": "application/json",
         Accept: "application/json",
       },
       method: "GET",
@@ -128,14 +176,14 @@ describe("backendRequest", () => {
   });
   it("still sends a request if the token is absent", async () => {
     makeFetch(fetchOpts.SUCCEED);
-    mockSendMessage.mockImplementation(async () => null);
+    getTokenMsg.mockImplementation(async () => null);
 
     await backendRequest("");
 
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
-      body: undefined,
       headers: {
         Accept: "application/json",
+        "Content-Type": "application/json",
       },
       method: "GET",
     });
@@ -143,16 +191,16 @@ describe("backendRequest", () => {
 
   it("handles exceptions from getToken", async () => {
     makeFetch(fetchOpts.SUCCEED);
-    mockSendMessage.mockImplementation(async () => {
+    getTokenMsg.mockImplementation(async () => {
       throw new Error("foo");
     });
 
     try {
       await backendRequest("");
       expect(fetch).toHaveBeenCalledWith("http://localhost:8000", {
-        body: undefined,
         headers: {
           Accept: "application/json",
+          "Content-Type": "application/json",
         },
         method: "GET",
       });

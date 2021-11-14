@@ -1,5 +1,8 @@
-import { getToken } from "./messaging";
+import { getTokenMsg } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
+import { serializeError } from "serialize-error";
+import { JsonObject } from "type-fest";
+import { inBackgroundScript, fetchToken } from "./background";
 
 export type SubmissionResource = {
   pk: number;
@@ -27,26 +30,50 @@ export async function backendRequest(
   route: string,
   method: string = "GET",
   data?: object,
-  headers?: HeadersInit
+  headers: Record<string, string> = {}
 ): Promise<Response> {
-  let tok: string = "";
-  try {
-    tok = await getToken();
-  } catch (e) {}
-
   headers = {
     Accept: "application/json",
+    "Content-Type": "application/json",
     ...headers,
   };
-  if (tok) {
-    headers = { Authorization: `Token ${tok}`, ...headers };
+
+  if (!headers.Authorization) {
+    // try to get a token
+    try {
+      let tok: string;
+      if (inBackgroundScript()) {
+        // if this is being called from a background script context, we don't
+        // need to send a message to ourselves, we can just get the token
+        // directly
+        tok = await fetchToken();
+      } else {
+        // otherwise, send a message to the background script to get the
+        // token
+        tok = await getTokenMsg();
+      }
+      if (tok && tok.length) {
+        headers = { Authorization: `Token ${tok}`, ...headers };
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
+
   const uri = BACKEND_BASE_URL + route;
-  return fetch(uri, {
-    method,
-    headers,
-    body: JSON.stringify(data),
-  });
+
+  if (data && method !== "GET") {
+    return fetch(uri, {
+      method,
+      headers,
+      body: JSON.stringify(data),
+    });
+  } else {
+    return fetch(uri, {
+      method,
+      headers,
+    });
+  }
 }
 
 /**
@@ -55,14 +82,25 @@ export async function backendRequest(
  */
 export async function logToBackend(
   msg: string,
-  json?: object,
+  json?: JsonObject,
+  error?: Error,
   dumpDom: boolean = false
 ): Promise<void> {
-  const payload: { [k: string]: string | object } = {
+  console.error("logging error: ", error);
+  type Payload = {
+    message: string;
+    extra_data?: JsonObject;
+    dom_dump?: string;
+  };
+  const payload: Payload = {
     message: msg,
   };
   if (json) {
     payload.extra_data = json;
+  }
+  if (error) {
+    const serialized = serializeError(error);
+    payload.extra_data = { ...payload.extra_data, ...serialized };
   }
   if (dumpDom) {
     payload.dom_dump = `<html>${document.head.outerHTML}${document.body.outerHTML}`;

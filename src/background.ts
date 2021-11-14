@@ -1,19 +1,45 @@
-import { logToBackend } from "./api";
+import {
+  GradingSessionDetailResponse,
+  logToBackend,
+  backendRequest,
+} from "./api";
 import { BACKEND_BASE_URL } from "./constants";
-import { MessageTypes, Message } from "./messaging";
+import {
+  BackgroundMessageTypes,
+  contentScriptReady,
+  RuntimeMsg,
+  beginContentScriptSyncMsg,
+} from "./messaging";
+import { focusTab } from "./util";
+
+/**
+ * Any exported functions in this module should be guarded by this, because
+ * they cannot be called outside the background script context.
+ */
+export function inBackgroundScript() {
+  return browser.extension.getBackgroundPage() === window;
+}
 
 /**
  * checks localStorage for a token, or calls the login function to get one.
  */
-async function fetchToken(): Promise<string> {
-  const result: { ["token"]: string } | undefined =
-    await browser.storage.sync.get("token");
-  let tok: string | undefined = result?.token;
-  if (!tok) {
-    tok = await login();
-    browser.storage.sync.set({ token: tok });
+export async function fetchToken(): Promise<string> {
+  if (!inBackgroundScript()) {
+    throw new Error("cannot call this method outside the background script");
   }
-  return tok;
+  try {
+    const result: { ["token"]: string } | undefined =
+      await browser.storage.sync.get("token");
+    let tok: string | undefined = result?.token;
+    if (!tok) {
+      tok = await login();
+      browser.storage.sync.set({ token: tok });
+    }
+    return tok;
+  } catch (e) {
+    logToBackend("failed to get token", null, e);
+    return "";
+  }
 }
 
 /**
@@ -33,11 +59,8 @@ async function clearToken(): Promise<null> {
  * token.
  */
 async function login(nRetries = 0): Promise<string> {
-  // the chrome identity api seems much easier than the generic browser
-  // identiy API. i.e., you can just grab the token at any time, since users
-  // are always logged in to chrome. When the time comes to launch the
-  // extension on other platforms, this log call will remind me if I forget
-  // to fix this!
+  debugger;
+
   if (global.chrome === undefined) {
     logToBackend("chrome API is not present");
     return "";
@@ -87,20 +110,84 @@ async function login(nRetries = 0): Promise<string> {
   });
 }
 
-async function handleMessage(
-  message: Message<any>,
-  // TODO: this arg contains details about who the message is coming from,
-  // which must be read to validate against XSS via out-of-band messages
-  _: any
-) {
-  switch (message.kind) {
-    case MessageTypes.GET_TOKEN:
+/**
+ * Focus the user on the correct tab or create a new one such that they can
+ * see the assignment they want to sync. await a ping from the content
+ * script to confirm its readiness.
+ */
+async function prepareToSync(data: GradingSessionDetailResponse) {
+  // first, try to find an existing tab we can switch to. We want to check
+  // both the explicit UI url from the Classroom API, but also have the
+  // flexibility to detect the `/u/<number>/` portion of google's url
+  // patterns.
+  const userUrlPattern = data.session.google_classroom_detail_view_url.replace(
+    "/c/",
+    "/u/*/c/"
+  );
+  const tab = await focusTab(
+    [userUrlPattern],
+    data.session.google_classroom_detail_view_url
+  );
+  return tab;
+}
+
+/* inner handler that does not catch errors */
+async function _syncSetupUnsafe(
+  pk: string
+): Promise<{ gradingSessionData: GradingSessionDetailResponse; tab: Tab }> {
+  const res = await backendRequest(`/grader/session/${pk}/`);
+  const gradingSessionData = <GradingSessionDetailResponse>await res.json();
+  const tab = await prepareToSync(gradingSessionData);
+  return { gradingSessionData, tab };
+}
+
+async function syncSetup(
+  pk: string
+): Promise<
+  { gradingSessionData: GradingSessionDetailResponse; tab: Tab } | false
+> {
+  try {
+    return await _syncSetupUnsafe(pk);
+  } catch (err) {
+    logToBackend(`sync failed due to exception: ${err}`, err);
+    return false;
+  }
+}
+
+async function _unsafePerformSync(pk: string): Promise<boolean> {
+  const data = await syncSetup(pk);
+  if (data) {
+    await contentScriptReady(data.tab.id);
+    await beginContentScriptSyncMsg(data.gradingSessionData, data.tab.id);
+  } else {
+    return false;
+  }
+}
+
+async function performSync(pk: string): Promise<boolean> {
+  try {
+    return await _unsafePerformSync(pk);
+  } catch (e) {
+    logToBackend("failed to sync due to error", null, e);
+    return false;
+  }
+}
+
+async function handleMessage(msg: RuntimeMsg, _: any) {
+  switch (msg.kind) {
+    case BackgroundMessageTypes.GET_TOKEN:
       return fetchToken();
-    case MessageTypes.CLEAR_TOKEN:
+    case BackgroundMessageTypes.CLEAR_TOKEN:
       await clearToken();
       return fetchToken();
+    case BackgroundMessageTypes.PERFORM_SYNC:
+      return await performSync(<string>msg.payload.pk);
   }
-  return null;
 }
 
 browser.runtime.onMessage.addListener(handleMessage);
+
+export const exportedForTesting = {
+  performSync,
+  _unsafePerformSync,
+};
