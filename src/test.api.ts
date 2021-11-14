@@ -18,8 +18,6 @@ import { inBackgroundScript as _ibs, fetchToken as _ft } from "./background";
 jest.mock("./background");
 const _ibst = <any>_ibs;
 const inBackgroundScript = <jest.MockedFunction<typeof _ibs>>_ibst;
-const _ftt = <any>_ft;
-const fetchToken = <jest.MockedFunction<typeof _ft>>_ftt;
 
 inBackgroundScript.mockImplementation(() => false);
 

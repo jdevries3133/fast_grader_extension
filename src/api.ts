@@ -86,7 +86,10 @@ export async function logToBackend(
   error?: Error,
   dumpDom: boolean = false
 ): Promise<void> {
-  console.error("logging error: ", error);
+  // supress console logs for testing
+  if (process?.env?.JEST_WORKER_ID === undefined) {
+    console.error("logging error: ", error);
+  }
   type Payload = {
     message: string;
     extra_data?: JsonObject;

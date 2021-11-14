@@ -129,42 +129,18 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
   return tab;
 }
 
-/* inner handler that does not catch errors */
-async function _syncSetupUnsafe(
-  pk: string
-): Promise<{ gradingSessionData: GradingSessionDetailResponse; tab: Tab }> {
+async function _unsafePerformSync(pk: string) {
   const res = await backendRequest(`/grader/session/${pk}/`);
   const gradingSessionData = <GradingSessionDetailResponse>await res.json();
   const tab = await prepareToSync(gradingSessionData);
-  return { gradingSessionData, tab };
-}
-
-async function syncSetup(
-  pk: string
-): Promise<
-  { gradingSessionData: GradingSessionDetailResponse; tab: Tab } | false
-> {
-  try {
-    return await _syncSetupUnsafe(pk);
-  } catch (err) {
-    logToBackend(`sync failed due to exception: ${err}`, err);
-    return false;
-  }
-}
-
-async function _unsafePerformSync(pk: string): Promise<boolean> {
-  const data = await syncSetup(pk);
-  if (data) {
-    await contentScriptReady(data.tab.id);
-    await beginContentScriptSyncMsg(data.gradingSessionData, data.tab.id);
-  } else {
-    return false;
-  }
+  await contentScriptReady(tab.id);
+  await beginContentScriptSyncMsg(gradingSessionData, tab.id);
 }
 
 async function performSync(pk: string): Promise<boolean> {
   try {
-    return await _unsafePerformSync(pk);
+    await _unsafePerformSync(pk);
+    return true;
   } catch (e) {
     logToBackend("failed to sync due to error", null, e);
     return false;
@@ -179,7 +155,7 @@ async function handleMessage(msg: RuntimeMsg, _: any) {
       await clearToken();
       return fetchToken();
     case BackgroundMessageTypes.PERFORM_SYNC:
-      return await performSync(<string>msg.payload.pk);
+      return await performSync(msg.payload.pk);
   }
 }
 
