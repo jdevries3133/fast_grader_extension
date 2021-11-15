@@ -1,17 +1,18 @@
-import {ContentMessageTypes, TabMsg} from "./messaging";
-import {GradingSessionDetailResponse, logToBackend} from "./api";
-import {wait} from "./util";
+import { ContentMessageTypes, TabMsg } from "./messaging";
+import { GradingSessionDetailResponse, logToBackend } from "./api";
+import { wait } from "./util";
 
 /**
  * If we can find the parent table, we are able to do the rest of the sync
  * operation
  */
 async function isReady(): Promise<boolean> {
-  console.log("pong");
   try {
     await getParentTable();
+    console.log("pong");
     return true;
-  } finally {
+  } catch (e) {
+    console.log(e);
     return false;
   }
 }
