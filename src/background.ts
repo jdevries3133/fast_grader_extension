@@ -17,7 +17,26 @@ import { focusTab } from "./util";
  * they cannot be called outside the background script context.
  */
 export function inBackgroundScript() {
-  return browser.extension.getBackgroundPage() === window;
+  try {
+    return browser.extension.getBackgroundPage() === window;
+  } catch (e) {
+    // getBackgroundPage() cannot be used in private windows and apparently
+    // some other content script contexts, but it always works in the background
+    // page, so this extra exception handler ensures that we always provide
+    // an accurate answer
+    if (
+      e.message.includes(
+        "browser.extension.getBackgroundPage is not a function"
+      )
+    ) {
+      console.log(
+        "presumably not in background script because getBackgroundPage is not a function"
+      );
+    } else {
+      console.error(e);
+    }
+    return false;
+  }
 }
 
 /**
@@ -159,7 +178,11 @@ async function handleMessage(msg: RuntimeMsg, _: any) {
   }
 }
 
-browser.runtime.onMessage.addListener(handleMessage);
+// allows the content script to import from this module without registering
+// a duplicate listener in another part of the extension
+if (inBackgroundScript()) {
+  browser.runtime.onMessage.addListener(handleMessage);
+}
 
 export const exportedForTesting = {
   performSync,
