@@ -3,14 +3,14 @@ import {
   logToBackend,
   backendRequest,
 } from "./api";
-import {BACKEND_BASE_URL} from "./constants";
+import { BACKEND_BASE_URL } from "./constants";
 import {
   BackgroundMessageTypes,
-  contentScriptReady,
   RuntimeMsg,
   beginContentScriptSyncMsg,
+  contentScriptReady,
 } from "./messaging";
-import {focusTab} from "./util";
+import { focusTab } from "./util";
 
 /**
  * Any exported functions in this module should be guarded by this, because
@@ -28,12 +28,12 @@ export async function fetchToken(): Promise<string> {
     throw new Error("cannot call this method outside the background script");
   }
   try {
-    const result: {["token"]: string} | undefined =
+    const result: { ["token"]: string } | undefined =
       await browser.storage.sync.get("token");
     let tok: string | undefined = result?.token;
     if (!tok) {
       tok = await login();
-      browser.storage.sync.set({token: tok});
+      browser.storage.sync.set({ token: tok });
     }
     return tok;
   } catch (e) {
@@ -88,7 +88,7 @@ async function login(nRetries = 0): Promise<string> {
             `${BACKEND_BASE_URL}/accounts/dj_rest_auth/google/`,
             {
               method: "POST",
-              body: JSON.stringify({access_token: token}),
+              body: JSON.stringify({ access_token: token }),
               headers: {
                 "Content-Type": "application/json",
               },
@@ -142,7 +142,7 @@ async function performSync(pk: string): Promise<boolean> {
     await _unsafePerformSync(pk);
     return true;
   } catch (e) {
-    logToBackend("failed to sync due to error", null, e);
+    console.log(e);
     return false;
   }
 }
