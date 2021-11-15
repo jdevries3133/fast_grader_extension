@@ -1,6 +1,6 @@
-import { ContentMessageTypes, TabMsg } from "./messaging";
-import { GradingSessionDetailResponse, logToBackend } from "./api";
-import { wait } from "./util";
+import {ContentMessageTypes, TabMsg} from "./messaging";
+import {GradingSessionDetailResponse, logToBackend} from "./api";
+import {wait} from "./util";
 
 /**
  * If we can find the parent table, we are able to do the rest of the sync
@@ -69,9 +69,9 @@ async function performSync(
 async function handleMessage(msg: TabMsg, _?: any) {
   switch (msg.kind) {
     case ContentMessageTypes.SYNC:
-      return await performSync(msg.payload);
+      return performSync(msg.payload);
     case ContentMessageTypes.PING:
-      return await isReady();
+      return isReady();
   }
 }
 
