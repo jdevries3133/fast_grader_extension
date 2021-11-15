@@ -1,8 +1,8 @@
-import { getTokenMsg } from "./messaging";
-import { BACKEND_BASE_URL } from "./constants";
-import { serializeError } from "serialize-error";
-import { JsonObject } from "type-fest";
-import { inBackgroundScript, fetchToken } from "./background";
+import {getTokenMsg} from "./messaging";
+import {BACKEND_BASE_URL} from "./constants";
+import {serializeError} from "serialize-error";
+import {JsonObject} from "type-fest";
+import {inBackgroundScript, fetchToken} from "./background";
 
 export type SubmissionResource = {
   pk: number;
@@ -53,7 +53,7 @@ export async function backendRequest(
         tok = await getTokenMsg();
       }
       if (tok && tok.length) {
-        headers = { Authorization: `Token ${tok}`, ...headers };
+        headers = {Authorization: `Token ${tok}`, ...headers};
       }
     } catch (e) {
       logToBackend("could not get auth token", null, e);
@@ -87,7 +87,7 @@ export async function logToBackend(
   dumpDom: boolean = false
 ): Promise<void> {
   // supress console logs for testing
-  if (process?.env?.JEST_WORKER_ID === undefined) {
+  if (global?.process && process?.env?.JEST_WORKER_ID === undefined) {
     console.error("logging error: ", error);
   }
   type Payload = {
@@ -103,7 +103,7 @@ export async function logToBackend(
   }
   if (error) {
     const serialized = serializeError(error);
-    payload.extra_data = { ...payload.extra_data, ...serialized };
+    payload.extra_data = {...payload.extra_data, ...serialized};
   }
   if (dumpDom) {
     payload.dom_dump = `<html>${document.head.outerHTML}${document.body.outerHTML}`;
