@@ -28,7 +28,7 @@ export type TabMsg = {
   payload?: any;
 };
 
-async function tabMessage(msg: TabMsg, tabId: number) {
+async function tabMessage(tabId: number, msg: TabMsg) {
   return await browser.tabs.sendMessage(tabId, msg);
 }
 
@@ -59,13 +59,14 @@ export async function beginContentScriptSyncMsg(
     kind: ContentMessageTypes.SYNC,
     payload: data,
   };
-  return await tabMessage(msg, tabId);
+  return await tabMessage(tabId, msg);
 }
 
 async function _pingContentScript(tabId: number): Promise<boolean> {
   try {
-    return await tabMessage({ kind: ContentMessageTypes.PING }, tabId);
-  } finally {
+    return await tabMessage(tabId, { kind: ContentMessageTypes.PING });
+  } catch (e) {
+    console.log(e);
     return false;
   }
 }
@@ -74,9 +75,11 @@ export async function contentScriptReady(
   tabId: number,
   retries: number = 0
 ): Promise<boolean> {
-  const RETRY_INTERVAL = 200; // ms
+  console.debug(`retry content script for ${retries}th time`);
+  const RETRY_INTERVAL = 500; // ms
   const MAX_RETRIES = 5;
-  if (await _pingContentScript(tabId)) {
+  const result = await _pingContentScript(tabId);
+  if (result) {
     return true;
   }
   await wait(RETRY_INTERVAL);
@@ -84,7 +87,7 @@ export async function contentScriptReady(
     throw new Error(
       `content script did not prepare itself within ${
         RETRY_INTERVAL * MAX_RETRIES
-      }`
+      }ms`
     );
   }
   return await contentScriptReady(tabId, retries + 1);
