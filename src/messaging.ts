@@ -64,7 +64,7 @@ export async function beginContentScriptSyncMsg(
 
 async function _pingContentScript(tabId: number): Promise<boolean> {
   try {
-    return <boolean>await tabMessage({ kind: ContentMessageTypes.PING }, tabId);
+    return await tabMessage({ kind: ContentMessageTypes.PING }, tabId);
   } finally {
     return false;
   }
@@ -87,5 +87,5 @@ export async function contentScriptReady(
       }`
     );
   }
-  return await contentScriptReady(retries + 1);
+  return await contentScriptReady(tabId, retries + 1);
 }
