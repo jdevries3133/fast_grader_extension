@@ -161,7 +161,7 @@ async function performSync(pk: string): Promise<boolean> {
     await _unsafePerformSync(pk);
     return true;
   } catch (e) {
-    console.log(e);
+    logToBackend("sync failed due to drror", null, e);
     return false;
   }
 }

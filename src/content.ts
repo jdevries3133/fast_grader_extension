@@ -9,7 +9,7 @@ import { wait } from "./util";
 async function isReady(): Promise<boolean> {
   try {
     await getParentTable();
-    console.log("pong");
+    console.debug("pong");
     return true;
   } catch (e) {
     console.log(e);
