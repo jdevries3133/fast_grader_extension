@@ -166,12 +166,8 @@ async function syncAction(sessionData: GradingSessionDetailResponse) {
  * sync, we will wait for the focus event, and place a banner over the DOM
  * to show the user that we are waiting.
  */
-let isFocused = false;
-window.onfocus = () => (isFocused = true);
-window.onblur = () => (isFocused = false);
-async function syncSetup(sessionData: GradingSessionDetailResponse) {
-  if (isFocused) {
-    performSync(sessionData);
+async function syncSetup() {
+  if (document.hasFocus()) {
     return;
   }
 
@@ -202,7 +198,7 @@ async function syncSetup(sessionData: GradingSessionDetailResponse) {
     `;
   document.body.appendChild(el);
 
-  while (!isFocused) {
+  while (!document.hasFocus()) {
     await wait(100);
   }
 
@@ -217,8 +213,9 @@ async function performSync(
   sessionData: GradingSessionDetailResponse
 ): Promise<boolean> {
   try {
-    await syncSetup(sessionData);
+    await syncSetup();
     await syncAction(sessionData);
+    return true;
   } catch (e) {
     logToBackend("sync failed due to unhandled error", { sessionData }, e);
     return false;
