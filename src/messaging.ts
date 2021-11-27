@@ -28,8 +28,8 @@ export type TabMsg = {
   payload?: any;
 };
 
-async function tabMessage(tabId: number, msg: TabMsg) {
-  return await browser.tabs.sendMessage(tabId, msg);
+function tabMessage(tabId: number, msg: TabMsg) {
+  return browser.tabs.sendMessage(tabId, msg);
 }
 
 async function runtimeMessage(msg: RuntimeMsg) {
@@ -51,7 +51,7 @@ export async function performSyncMsg(pk: string): Promise<boolean> {
   });
 }
 
-export async function beginContentScriptSyncMsg(
+export function beginContentScriptSyncMsg(
   data: GradingSessionDetailResponse,
   tabId: number
 ) {
@@ -59,7 +59,7 @@ export async function beginContentScriptSyncMsg(
     kind: ContentMessageTypes.SYNC,
     payload: data,
   };
-  return await tabMessage(tabId, msg);
+  return tabMessage(tabId, msg);
 }
 
 async function _pingContentScript(tabId: number): Promise<boolean> {

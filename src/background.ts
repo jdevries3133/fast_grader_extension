@@ -152,12 +152,27 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
   return tab;
 }
 
+/**
+ * After a successful response from the content script, send a PATCH request
+ * to the backend to mark this grading session as synced.
+ */
+async function markSynced(gradingSessionData: GradingSessionDetailResponse) {
+  backendRequest(
+    `/grader/session_viewset/${gradingSessionData.session.pk}/`,
+    "PATCH",
+    { last_synced: new Date().toJSON() }
+  );
+}
+
 async function _unsafePerformSync(pk: string) {
   const res = await backendRequest(`/grader/session/${pk}/`);
   const gradingSessionData = <GradingSessionDetailResponse>await res.json();
   const tab = await prepareToSync(gradingSessionData);
   await contentScriptReady(tab.id);
-  await beginContentScriptSyncMsg(gradingSessionData, tab.id);
+  const result = await beginContentScriptSyncMsg(gradingSessionData, tab.id);
+  if (result) {
+    markSynced(gradingSessionData);
+  }
 }
 
 async function performSync(pk: string): Promise<boolean> {
