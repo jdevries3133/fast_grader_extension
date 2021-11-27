@@ -29,7 +29,7 @@ export function inBackgroundScript() {
         "browser.extension.getBackgroundPage is not a function"
       )
     ) {
-      console.log(
+      console.debug(
         "presumably not in background script because getBackgroundPage is not a function"
       );
     } else {
@@ -142,7 +142,11 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
     "/u/*/c/"
   );
   const tab = await focusTab(
-    [userUrlPattern],
+    [
+      userUrlPattern,
+      userUrlPattern.replace("/all", "/*"),
+      data.session.google_classroom_detail_view_url.replace("/all", "/*"),
+    ],
     data.session.google_classroom_detail_view_url
   );
   return tab;
@@ -161,7 +165,7 @@ async function performSync(pk: string): Promise<boolean> {
     await _unsafePerformSync(pk);
     return true;
   } catch (e) {
-    logToBackend("sync failed due to drror", null, e);
+    logToBackend("sync failed due to error", null, e);
     return false;
   }
 }

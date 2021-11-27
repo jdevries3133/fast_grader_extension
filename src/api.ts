@@ -9,6 +9,7 @@ export type SubmissionResource = {
   api_student_profile_id: string;
   api_student_submission_id: string;
   submission: Array<string>;
+  profile_photo_url: string;
   student_name: string;
   grade: number;
   comment: string;

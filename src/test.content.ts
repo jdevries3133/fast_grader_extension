@@ -1,19 +1,20 @@
-import { wait } from "./util";
 import { exportedForTesting } from "./content";
 import { logToBackend } from "./api";
 
-const { getParentTable } = exportedForTesting;
+const { getParentTable, getRows, parseRow } = exportedForTesting;
+import mockPage from "./mockClassroomPage";
 
 jest.mock("./util");
 jest.mock("./api");
 
-// placate typescript
-const _mockWait = <any>wait;
-const mockWait = <jest.MockedFunction<typeof wait>>_mockWait;
+beforeEach(() => {
+  jest.useFakeTimers();
+  document.body.innerHTML = mockPage;
+});
 
-const { wait: originalWait } = jest.requireActual("./util");
-
-mockWait.mockImplementation((n) => originalWait(Math.floor(n / 4)));
+afterEach(() => {
+  document.body.innerHTML = "";
+});
 
 describe("getParentTable", () => {
   const getMockTable = () => {
@@ -30,11 +31,8 @@ describe("getParentTable", () => {
       });
   };
 
-  afterEach(() => {
-    document.getElementsByTagName("html")[0].innerHTML = "";
-  });
-
   it("finds the table", async () => {
+    document.body.innerHTML = "";
     insertTables(1);
     const res = await getParentTable().catch((e) => {
       throw new Error(e);
@@ -43,23 +41,54 @@ describe("getParentTable", () => {
   });
 
   it("retries if the table is missing at first", async () => {
-    // the func will be called before the table has been created
-    setTimeout(() => insertTables(1), 200);
+    document.body.innerHTML = "";
+    jest.useRealTimers();
 
-    // nonetheless, the result should be accurate due to internal re-trying
-    const res = await getParentTable();
+    // call fn without awaiting
+    const futureRes = getParentTable();
+
+    // maybe a bit flaky and timing-dependent? not sure
+    insertTables(1);
+    const res = await futureRes;
     expect(res).toContainHTML('<table aria-label="Students>');
+
+    jest.useFakeTimers();
   });
 
   it("resolves to an error and logs the error if there are too many tables", async () => {
+    document.body.innerHTML = "";
     insertTables(3);
     await expect(getParentTable()).rejects.toThrow();
   });
 
   it("stops recursing after 5 tries, and throws an error", async () => {
-    mockWait.mockImplementation(async () => null);
+    document.body.innerHTML = "";
 
     await expect(getParentTable()).rejects.toThrow();
     expect(logToBackend).toHaveBeenCalledWith("failed to get parent table");
+  });
+});
+
+test("getRows: filters out useless data and only provides relevant rows", async () => {
+  const parent = await getParentTable();
+  const rows = await getRows(parent);
+
+  // in the sameple data, all the "students" have my name
+  rows.forEach((row) => {
+    expect(row.innerHTML).toContain("Jack DeVries");
+  });
+});
+
+test("parseRow: returns an object with a name, profilePhotoUrl, and gradeInput", async () => {
+  const parent = await getParentTable();
+  const rows = await getRows(parent);
+
+  rows.forEach(async (row) => {
+    const result = parseRow(row);
+    expect(result).toMatchObject({
+      name: expect.any(String),
+      profilePhotoUrl: expect.stringMatching(/googleusercontent.com/),
+      gradeInput: expect.any(Element),
+    });
   });
 });

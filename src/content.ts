@@ -20,7 +20,7 @@ async function isReady(): Promise<boolean> {
 /**
  * Return the table with all students in it.
  */
-async function getParentTable(n_retries = 0): Promise<Element> {
+async function getParentTable(n_retries = 0): Promise<HTMLElement> {
   if (n_retries > 5) {
     throw new Error("cannot find parent table");
   }
@@ -37,7 +37,7 @@ async function getParentTable(n_retries = 0): Promise<Element> {
     }
   }
   if (possibleTables.length === 1) {
-    return possibleTables[0];
+    return <HTMLElement>possibleTables[0];
   }
   // fallthrough means we have an unexpected number of tables and need to
   // get word to the backend, because the extension is broken.
@@ -57,14 +57,172 @@ async function getParentTable(n_retries = 0): Promise<Element> {
   throw new Error(msg.join(" "));
 }
 
+async function getRows(
+  parentTable: Element,
+  retries: number = 0
+): Promise<Array<HTMLElement>> {
+  const rows = parentTable.querySelectorAll("tbody > tr");
+  if (!rows.length) {
+    console.debug("no rows visible yet");
+    if (retries > 10)
+      throw new Error("rows inside parent table could not be found");
+    await wait(200);
+    return await getRows(parentTable, retries + 1);
+  }
+  console.log(`${rows.length} rows found`);
+  return <HTMLElement[]>(
+    Array.from(rows).filter((row) => row.hasAttribute("data-student-id"))
+  );
+}
+
+function parseRow(row: HTMLElement): {
+  name: string;
+  profilePhotoUrl: string;
+  gradeInput: HTMLElement;
+} {
+  let name: string;
+  let profilePhotoUrl: string;
+  let gradeInput: HTMLElement;
+
+  const nameEl: HTMLElement = row.querySelector("span");
+  if (nameEl) {
+    name = nameEl.innerHTML;
+  }
+
+  const profilePhotEl: HTMLElement = row.querySelector("img");
+  if (profilePhotEl) {
+    profilePhotoUrl = profilePhotEl.getAttribute("src");
+
+    // profile photo has a resizing API parameter at the end which we will
+    // remove to ensure it can be compared accurately with the sanitized url
+    // coming from the backend
+    const urlParamStart = profilePhotoUrl.indexOf("=s32-c");
+    if (urlParamStart !== -1) {
+      profilePhotoUrl = profilePhotoUrl.slice(0, urlParamStart);
+    }
+  }
+
+  gradeInput = row.querySelector("td:nth-child(3) > div");
+
+  return { name, profilePhotoUrl, gradeInput };
+}
+
 /**
- * Return a boolean indicating success or failure.
+ * Input the grade into the google classroom DOM following a multi-step
+ * approach:
+ *
+ * 1. click the div to make the input element appear
+ * 2. find the input element
+ * 3. fill the input element with the value
+ */
+async function inputGradeValue(gradeInput: HTMLElement, gradeValue: Number) {
+  const WAIT_TIME = 10;
+  // clicking the div causes the input to be injected
+  gradeInput.click();
+
+  // look for the input element
+  let el: HTMLInputElement;
+  while (!(el = gradeInput.querySelector("input"))) {
+    await wait(WAIT_TIME);
+  }
+
+  // for some reason, we need a bit more waiting here for things to work. Maybe
+  // we need to wait for the animation to finish? I do not know.
+  await wait(WAIT_TIME);
+
+  // fill the input element with the value
+  el.value = gradeValue.toString();
+
+  await wait(WAIT_TIME);
+}
+
+async function syncAction(sessionData: GradingSessionDetailResponse) {
+  const parentEl = await getParentTable();
+  const rows = await getRows(parentEl);
+  for (const row of rows) {
+    const { name, profilePhotoUrl, gradeInput } = parseRow(row);
+
+    // extract matching assignment submission from sessionData payload
+    const matches = sessionData.session.submissions.filter((session) => {
+      return (
+        session.student_name == name &&
+        session.profile_photo_url.includes(profilePhotoUrl)
+      );
+    });
+    if (matches.length > 1) {
+      logToBackend("more than one more match", { matches }, null, true);
+      return;
+    }
+    if (!matches.length) return;
+    const match = matches[0];
+
+    await inputGradeValue(gradeInput, match.grade);
+  }
+}
+
+/**
+ * If the window is not focused, Google's javascript will not respond to our
+ * DOM manipulation. In that case, instead of immediately triggering the
+ * sync, we will wait for the focus event, and place a banner over the DOM
+ * to show the user that we are waiting.
+ */
+let isFocused = false;
+window.onfocus = () => (isFocused = true);
+window.onblur = () => (isFocused = false);
+async function syncSetup(sessionData: GradingSessionDetailResponse) {
+  if (isFocused) {
+    performSync(sessionData);
+    return;
+  }
+
+  // inject some UI to indicate that the user needs to focus the tab
+  const el = document.createElement("div");
+  el.setAttribute(
+    "style",
+    `display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
+      background-color: black;
+      background-opacity: 50%`
+  );
+  el.innerHTML = `
+      <div style="
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 1px 1px 3px #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;">
+        <h1 style="font-size: 4em;">Click to Sync Grades</h1>
+      </div>
+    `;
+  document.body.appendChild(el);
+
+  while (!isFocused) {
+    await wait(100);
+  }
+
+  document.body.removeChild(el);
+}
+
+/**
+ * Returns a boolean indicating success or failure, and handles exceptions
+ * from the inner sync-related functions above
  */
 async function performSync(
   sessionData: GradingSessionDetailResponse
 ): Promise<boolean> {
-  console.log("hi", sessionData);
-  return true;
+  try {
+    await syncSetup(sessionData);
+    await syncAction(sessionData);
+  } catch (e) {
+    logToBackend("sync failed due to unhandled error", { sessionData }, e);
+    return false;
+  }
 }
 
 async function handleMessage(msg: TabMsg, _?: any) {
@@ -82,4 +240,6 @@ export const exportedForTesting = {
   getParentTable,
   performSync,
   handleMessage,
+  getRows,
+  parseRow,
 };

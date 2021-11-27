@@ -1,4 +1,4 @@
-enum HtmxHttpVerbs {
+declare enum HtmxHttpVerbs {
   "GET",
   "POST",
   "PUT",
