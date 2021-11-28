@@ -37,11 +37,6 @@ module.exports = {
         {
           from: "node_modules/webextension-polyfill/dist/browser-polyfill.js",
         },
-
-        {
-          from: "./src/*.html",
-          to: "[name].html",
-        },
         {
           from: "./src/icons/*",
           to: "icons/[name][ext]",

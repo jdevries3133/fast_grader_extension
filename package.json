@@ -1,10 +1,9 @@
 {
   "name": "fast_grader_extension",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Browser extension to sync grades that were input on https://classfast.app/",
-  "main": "index.js",
   "scripts": {
-    "dist": "npm run build && npm run tailwind-build",
+    "dist": "rm -rf dist && npm run build && npm run tailwind-build",
     "build": "webpack --mode production --config webpack.prod.js",
     "dev": "webpack --mode development --watch --config webpack.dev.js",
     "tailwind-build": "npx tailwindcss -c ./tailwind.config.js -i ./src/styles.css -o ./dist/styles.css",

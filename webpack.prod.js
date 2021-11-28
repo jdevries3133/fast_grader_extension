@@ -1,13 +1,14 @@
 const { merge } = require("webpack-merge");
 const CopyPlugin = require("copy-webpack-plugin");
 const common = require("./webpack.common");
+const replace = require("buffer-replace");
 
 module.exports = merge(common, {
   mode: "production",
   module: {
     rules: [
       {
-        test: /\.(j|t)s(x)?$/,
+        test: /\.ts(x)?$/,
         loader: "string-replace-loader",
         options: {
           search: /http:\/\/localhost:8000/,
@@ -22,6 +23,17 @@ module.exports = merge(common, {
         {
           from: "./src/manifest.json",
           to: "manifest.json",
+        },
+        {
+          from: "./src/*.html",
+          to: "[name].html",
+          transform(buf) {
+            return replace(
+              buf,
+              "http://localhost:8000",
+              "https://classfast.app"
+            );
+          },
         },
       ],
     }),

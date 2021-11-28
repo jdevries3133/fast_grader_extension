@@ -18,6 +18,10 @@ module.exports = merge(common, {
             return replace(buf, src, target);
           },
         },
+        {
+          from: "./src/*.html",
+          to: "[name].html",
+        },
       ],
     }),
   ],
