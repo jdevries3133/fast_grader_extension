@@ -160,7 +160,7 @@ async function markSynced(gradingSessionData: GradingSessionDetailResponse) {
   backendRequest(
     `/grader/session_viewset/${gradingSessionData.session.pk}/`,
     "PATCH",
-    { last_synced: new Date().toJSON() }
+    { sync_state: "SYNCED" }
   );
 }
 
