@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  @font-face {
+    font-family: "Inconsolata";
+    src: url("/fonts/inconsolata.ttf");
+  }
+
+  @font-face {
+    font-family: "Roboto Slab";
+    src: url("/fonts/roboto_slab.ttf");
+  }
+
   body {
     min-height: 14rem;
     min-width: 24rem;

@@ -1,6 +1,7 @@
 dist
 *.crx
 *.pem
+*.zip
 node_modules
 coverage
 notes.md

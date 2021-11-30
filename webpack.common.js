@@ -41,6 +41,11 @@ module.exports = {
           from: "./src/icons/*",
           to: "icons/[name][ext]",
         },
+        {
+          from: "./src/fonts/*",
+          to: "fonts/[name][ext]",
+        },
+        { from: "./src/vendor/htmx@1.6.1.js", to: "vendor/[name].js" },
       ],
     }),
   ],
