@@ -28,6 +28,26 @@ function openClassFast() {
   });
 }
 
+function resumeGrading(e: Event) {
+  if (!(e.target instanceof HTMLElement)) {
+    return;
+  }
+  const pk = e.target.getAttribute("data-pk");
+  browser.tabs.create({
+    url: `${BACKEND_BASE_URL}/grader/${pk}/`,
+  });
+}
+
+function viewOnSite(e: Event) {
+  if (!(e.target instanceof HTMLElement)) {
+    return;
+  }
+  const pk = e.target.getAttribute("data-pk");
+  browser.tabs.create({
+    url: `${BACKEND_BASE_URL}/grader/session/${pk}/`,
+  });
+}
+
 /**
  * Apparently content-security policies are so DAMN psychophantic that they
  * won't allow anything fun or dynamic. Instead, we register all the event
@@ -57,6 +77,16 @@ const eventRegistry: Array<{
   {
     selector: ".openClassFast",
     handler: openClassFast,
+    event: "click",
+  },
+  {
+    selector: "#resumeGrading",
+    handler: resumeGrading,
+    event: "click",
+  },
+  {
+    selector: "#viewOnSite",
+    handler: viewOnSite,
     event: "click",
   },
 ];
