@@ -13,9 +13,13 @@ module.exports = merge(common, {
           from: "./src/manifest.json",
           to: "manifest.json",
           transform(buf) {
-            const src = `"content_security_policy": "script-src 'self'`;
-            const target = `"content_security_policy": "script-src 'self' 'unsafe-eval'`;
-            return replace(buf, src, target);
+            const data = JSON.parse(buf.toString("utf8"));
+            data[
+              "content_security_policy"
+            ] = `"content_security_policy": "script-src 'self' 'unsafe-eval'`;
+            data["oauth2"]["client_id"] =
+              "568001308128-19ol41cg8ujnb44s2m459ps4of8tlqmt.apps.googleusercontent.com";
+            return Buffer.from(JSON.stringify(data));
           },
         },
         {

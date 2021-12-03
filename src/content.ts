@@ -69,7 +69,7 @@ async function getRows(
     await wait(200);
     return await getRows(parentTable, retries + 1);
   }
-  console.log(`${rows.length} rows found`);
+
   return <HTMLElement[]>(
     Array.from(rows).filter((row) => row.hasAttribute("data-student-id"))
   );
@@ -150,7 +150,10 @@ async function syncAction(sessionData: GradingSessionDetailResponse) {
       );
     });
     if (matches.length > 1) {
-      logToBackend("more than one more match", { matches }, null, true);
+      logToBackend("more than one more match", null, {
+        json: matches,
+        domDump: true,
+      });
       return;
     }
     if (!matches.length) return;
@@ -217,7 +220,9 @@ async function performSync(
     await syncAction(sessionData);
     return true;
   } catch (e) {
-    logToBackend("sync failed due to unhandled error", { sessionData }, e);
+    logToBackend("sync failed due to unhandled error", e, {
+      json: sessionData,
+    });
     return false;
   }
 }

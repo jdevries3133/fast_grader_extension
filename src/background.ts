@@ -56,7 +56,7 @@ export async function fetchToken(): Promise<string> {
     }
     return tok;
   } catch (e) {
-    logToBackend("failed to get token", null, e);
+    logToBackend("failed to get token", e, { associateUser: false });
     return "";
   }
 }
@@ -69,7 +69,7 @@ async function clearToken(): Promise<null> {
   try {
     return await browser.storage.sync.remove("token");
   } catch (e) {
-    logToBackend("failed to remove token");
+    logToBackend("failed to remove token", e, { associateUser: false });
   }
 }
 
@@ -79,7 +79,7 @@ async function clearToken(): Promise<null> {
  */
 async function login(nRetries = 0): Promise<string> {
   if (global.chrome === undefined) {
-    logToBackend("chrome API is not present");
+    logToBackend("chrome API is not present", null, { associateUser: false });
     return "";
   }
   return new Promise(async (resolve) => {
@@ -90,13 +90,17 @@ async function login(nRetries = 0): Promise<string> {
       async (token) => {
         if (chrome.runtime.lastError) {
           logToBackend(
-            `error while getting oauth token: ${chrome.runtime.lastError}`
+            `error while getting oauth token: ${chrome.runtime.lastError}`,
+            null,
+            { associateUser: false }
           );
           resolve(null);
         }
         if (token === null || token === undefined) {
           logToBackend(
-            "chrome identity api called callback with null or undefined token"
+            "chrome identity api called callback with null or undefined token",
+            null,
+            { associateUser: false }
           );
           resolve(null);
         }
@@ -180,7 +184,7 @@ async function performSync(pk: string): Promise<boolean> {
     await _unsafePerformSync(pk);
     return true;
   } catch (e) {
-    logToBackend("sync failed due to error", null, e);
+    logToBackend("sync failed due to error", e);
     return false;
   }
 }

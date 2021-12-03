@@ -22,8 +22,14 @@ const inBackgroundScript = <jest.MockedFunction<typeof _ibs>>_ibst;
 inBackgroundScript.mockImplementation(() => false);
 
 describe("logToBackend", () => {
-  beforeAll(() => fetchMock.mockClear());
-  afterEach(() => fetchMock.mockClear());
+  beforeAll(() => {
+    fetchMock.mockClear();
+    getTokenMsg.mockClear();
+  });
+  afterEach(() => {
+    fetchMock.mockClear();
+    getTokenMsg.mockClear();
+  });
 
   it("causes a network request to /ext/log_error", async () => {
     await logToBackend("foo");
@@ -38,7 +44,7 @@ describe("logToBackend", () => {
   });
 
   it("responds to dumDom=true", async () => {
-    await logToBackend("foo", null, null, true);
+    await logToBackend("foo", null, { domDump: true });
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo","dom_dump":"<html><head></head><body></body>"}',
       headers: {
@@ -50,7 +56,7 @@ describe("logToBackend", () => {
   });
 
   it("responds to dumpDom=false", async () => {
-    await logToBackend("foo", null, null, false);
+    await logToBackend("foo", null, { domDump: false });
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"foo"}',
       headers: {
@@ -62,11 +68,11 @@ describe("logToBackend", () => {
   });
 
   it("sends extra data when provided", async () => {
-    await logToBackend("foo", {
-      extra: "data",
+    await logToBackend("foo", null, {
+      json: { data: "data" },
     });
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
-      body: '{"message":"foo","extra_data":{"extra":"data"}}',
+      body: '{"message":"foo","extra_data":{"data":"data"}}',
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -79,7 +85,7 @@ describe("logToBackend", () => {
       return <ErrorObject>{ name: "foo" };
     });
     const err = new Error("foo");
-    await logToBackend("error!", null, err);
+    await logToBackend("error!", err);
     expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
       body: '{"message":"error!","extra_data":{"name":"foo"}}',
       headers: {
@@ -88,6 +94,33 @@ describe("logToBackend", () => {
       },
       method: "POST",
     });
+  });
+  it("sends the user's token by default", async () => {
+    getTokenMsg.mockImplementation(async () => "SENTINEL");
+    await logToBackend("foo");
+    expect(getTokenMsg).toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
+      body: '{"message":"foo"}',
+      headers: {
+        Accept: "application/json",
+        Authorization: "Token SENTINEL",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  });
+  it("does not try to get the token is associateUser is false", async () => {
+    await logToBackend("foo", null, { associateUser: false });
+    expect(fetch).toHaveBeenCalledWith("http://localhost:8000/ext/log_error/", {
+      body: '{"message":"foo"}',
+      headers: {
+        Accept: "application/json",
+        Authorization: "Token prevent_auth_with_null_token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+    expect(getTokenMsg).toHaveBeenCalledTimes(0);
   });
 });
 

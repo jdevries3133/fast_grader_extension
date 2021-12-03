@@ -29,11 +29,10 @@ module.exports = merge(common, {
           from: "./src/manifest.json",
           to: "manifest.json",
           transform(buf) {
-            // remove the api key for production build, because the web store
-            // does not want it to have an API key, and they will insert
-            // their own
             const data = JSON.parse(buf.toString("utf8"));
             delete data["key"];
+            data["oauth2"]["client_id"] =
+              "850669494212-rbi5f45edqpnru9a7gs1avgb480kr92b.apps.googleusercontent.com";
             return Buffer.from(JSON.stringify(data));
           },
         },

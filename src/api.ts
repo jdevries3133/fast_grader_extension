@@ -1,7 +1,7 @@
 import { getTokenMsg } from "./messaging";
 import { BACKEND_BASE_URL } from "./constants";
 import { serializeError } from "serialize-error";
-import { JsonObject } from "type-fest";
+import { JsonArray, JsonObject } from "type-fest";
 import { inBackgroundScript, fetchToken } from "./background";
 
 export type SubmissionResource = {
@@ -57,7 +57,9 @@ export async function backendRequest(
         headers = { Authorization: `Token ${tok}`, ...headers };
       }
     } catch (e) {
-      logToBackend("could not get auth token", null, e);
+      logToBackend("could not get auth token", e, {
+        associateUser: false,
+      });
     }
   }
 
@@ -83,34 +85,49 @@ export async function backendRequest(
  */
 export async function logToBackend(
   msg: string,
-  json?: JsonObject,
   error?: Error,
-  dumpDom: boolean = false
+  options?: {
+    json?: JsonObject | JsonArray;
+
+    domDump?: boolean;
+    // if the issue is with oauth or authentication, we don't want to try to associate
+    // the error with a user, since that could cause a recursive loop
+    associateUser?: boolean;
+    token?: string;
+  }
 ): Promise<void> {
   // supress console logs for testing
   if (global?.process && process?.env?.JEST_WORKER_ID === undefined) {
     console.error("logging error: ", error);
   }
+
   type Payload = {
     message: string;
-    extra_data?: JsonObject;
+    extra_data?: JsonObject | JsonArray;
     dom_dump?: string;
   };
   const payload: Payload = {
     message: msg,
   };
-  if (json) {
-    payload.extra_data = json;
+  const headers: Record<string, string> = {};
+
+  if (options?.json) {
+    payload.extra_data = options.json;
   }
   if (error) {
     const serialized = serializeError(error);
     payload.extra_data = { ...payload.extra_data, ...serialized };
   }
-  if (dumpDom) {
+  if (options?.domDump) {
     payload.dom_dump = `<html>${document.head.outerHTML}${document.body.outerHTML}`;
   }
+  if (options?.associateUser === false) {
+    // the default behavior of backendRequest is to grab the token and send
+    // it along. We can block this by putting a dummy auth header in
+    headers.Authorization = "Token prevent_auth_with_null_token";
+  }
   try {
-    await backendRequest("/ext/log_error/", "POST", payload);
+    await backendRequest("/ext/log_error/", "POST", payload, headers);
   } finally {
     // just cry; there's nothing more we can do
   }
