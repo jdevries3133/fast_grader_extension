@@ -37,7 +37,7 @@ function setupTabs(tabResponse?: Tab) {
   findTab.mockImplementation(async (_, __) => {
     return (
       tabResponse || {
-        url: gradingSessionDetail.session.google_classroom_detail_view_url,
+        url: gradingSessionDetail.google_classroom_detail_view_url,
         active: false,
         windowId: 1,
         id: 2,
@@ -77,16 +77,16 @@ describe("syncRequestHandler", () => {
 
   it("fetches pk from backend", async () => {
     await _unsafePerformSync("2");
-    expect(backendRequest).toHaveBeenCalledWith(`/grader/session/2/`);
+    expect(backendRequest).toHaveBeenCalledWith(`/grader/deep_session/2/`);
   });
 
   it("sends response data to beginContentScriptSync", async () => {
     backendRequest.mockClear();
-    setupResponseData({ session: { google_classroom_detail_view_url: "foo" } });
+    setupResponseData({ google_classroom_detail_view_url: "foo" });
     await _unsafePerformSync("2");
     expect(beginContentScriptSyncMsg).toHaveBeenCalledWith(
       {
-        session: { google_classroom_detail_view_url: "foo" },
+        google_classroom_detail_view_url: "foo",
       },
       2
     );

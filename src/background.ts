@@ -2,6 +2,7 @@ import {
   GradingSessionDetailResponse,
   logToBackend,
   backendRequest,
+  SyncStates,
 } from "./api";
 import { BACKEND_BASE_URL } from "./constants";
 import {
@@ -141,7 +142,7 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
   // both the explicit UI url from the Classroom API, but also have the
   // flexibility to detect the `/u/<number>/` portion of google's url
   // patterns.
-  const userUrlPattern = data.session.google_classroom_detail_view_url.replace(
+  const userUrlPattern = data.google_classroom_detail_view_url.replace(
     "/c/",
     "/u/*/c/"
   );
@@ -149,9 +150,9 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
     [
       userUrlPattern,
       userUrlPattern.replace("/all", "/*"),
-      data.session.google_classroom_detail_view_url.replace("/all", "/*"),
+      data.google_classroom_detail_view_url.replace("/all", "/*"),
     ],
-    data.session.google_classroom_detail_view_url
+    data.google_classroom_detail_view_url
   );
   return tab;
 }
@@ -161,15 +162,13 @@ async function prepareToSync(data: GradingSessionDetailResponse) {
  * to the backend to mark this grading session as synced.
  */
 async function markSynced(gradingSessionData: GradingSessionDetailResponse) {
-  backendRequest(
-    `/grader/session_viewset/${gradingSessionData.session.pk}/`,
-    "PATCH",
-    { sync_state: "SYNCED" }
-  );
+  backendRequest(`/grader/session_viewset/${gradingSessionData.pk}/`, "PATCH", {
+    sync_state: SyncStates.SYNCED,
+  });
 }
 
 async function _unsafePerformSync(pk: string) {
-  const res = await backendRequest(`/grader/session/${pk}/`);
+  const res = await backendRequest(`/grader/deep_session/${pk}/`);
   const gradingSessionData = <GradingSessionDetailResponse>await res.json();
   const tab = await prepareToSync(gradingSessionData);
   await contentScriptReady(tab.id);

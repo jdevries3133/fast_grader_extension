@@ -4,27 +4,31 @@ import { serializeError } from "serialize-error";
 import { JsonArray, JsonObject } from "type-fest";
 import { inBackgroundScript, fetchToken } from "./background";
 
+export enum SyncStates {
+  SYNCED = "S",
+  UNSYNCED = "U",
+}
+
 export type SubmissionResource = {
   pk: number;
   api_student_profile_id: string;
   api_student_submission_id: string;
-  submission: Array<string>;
-  profile_photo_url: string;
-  student_name: string;
-  grade: number;
-  comment: string;
+  submission?: Array<string>;
+  profile_photo_url?: string;
+  student_name?: string;
+  grade?: number;
+  comment?: string;
 };
 
 export type GradingSessionDetailResponse = {
-  session: {
-    pk: number;
-    api_assignment_id: string;
-    max_grade: number;
-    teacher_template: string;
-    average_grade: number;
-    google_classroom_detail_view_url: string;
-    submissions: Array<SubmissionResource>;
-  };
+  pk: number;
+  api_assignment_id: string;
+  max_grade: number;
+  teacher_template: string;
+  average_grade: number;
+  sync_state: "U" | "S";
+  google_classroom_detail_view_url: string;
+  submissions: Array<SubmissionResource>;
 };
 
 export async function backendRequest(

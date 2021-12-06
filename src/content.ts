@@ -143,7 +143,7 @@ async function syncAction(sessionData: GradingSessionDetailResponse) {
     const { name, profilePhotoUrl, gradeInput } = parseRow(row);
 
     // extract matching assignment submission from sessionData payload
-    const matches = sessionData.session.submissions.filter((session) => {
+    const matches = sessionData.submissions.filter((session) => {
       return (
         session.student_name == name &&
         session.profile_photo_url.includes(profilePhotoUrl)
