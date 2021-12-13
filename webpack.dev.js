@@ -1,5 +1,3 @@
-const fs = require("fs");
-
 const { merge } = require("webpack-merge");
 const CopyPlugin = require("copy-webpack-plugin");
 const common = require("./webpack.common");
@@ -19,13 +17,6 @@ module.exports = merge(common, {
               "script-src 'self' 'unsafe-eval'; object-src 'self'";
             data["oauth2"]["client_id"] =
               "568001308128-fq83v3nvmk7elfdcd937qail0k9fgtkt.apps.googleusercontent.com";
-            const key = fs
-              .readFileSync("public_key.pem", "utf8")
-              .replace("-----BEGIN PRIVATE KEY-----", "")
-              .replace("-----END PRIVATE KEY-----", "")
-              .replaceAll("\n", "")
-              .trim();
-            data["key"] = key;
             return Buffer.from(JSON.stringify(data));
           },
         },
