@@ -18,9 +18,9 @@ module.exports = merge(common, {
             data["content_security_policy"] =
               "script-src 'self' 'unsafe-eval'; object-src 'self'";
             data["oauth2"]["client_id"] =
-              "568001308128-19ol41cg8ujnb44s2m459ps4of8tlqmt.apps.googleusercontent.com";
+              "568001308128-fq83v3nvmk7elfdcd937qail0k9fgtkt.apps.googleusercontent.com";
             const key = fs
-              .readFileSync("private_key.pem", "utf8")
+              .readFileSync("public_key.pem", "utf8")
               .replace("-----BEGIN PRIVATE KEY-----", "")
               .replace("-----END PRIVATE KEY-----", "")
               .replaceAll("\n", "")

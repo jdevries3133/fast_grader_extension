@@ -1,3 +1,5 @@
+const fs = require("fs");
+
 const { merge } = require("webpack-merge");
 const CopyPlugin = require("copy-webpack-plugin");
 const common = require("./webpack.common");
@@ -32,7 +34,14 @@ module.exports = merge(common, {
             const data = JSON.parse(buf.toString("utf8"));
             delete data["key"];
             data["oauth2"]["client_id"] =
-              "850669494212-rbi5f45edqpnru9a7gs1avgb480kr92b.apps.googleusercontent.com";
+              "850669494212-vnl448og3f97mnjsusupm3lftede1r34.apps.googleusercontent.com";
+            const key = fs
+              .readFileSync("public_key.pem", "utf8")
+              .replace("-----BEGIN PRIVATE KEY-----", "")
+              .replace("-----END PRIVATE KEY-----", "")
+              .replaceAll("\n", "")
+              .trim();
+            data["key"] = key;
             return Buffer.from(JSON.stringify(data));
           },
         },

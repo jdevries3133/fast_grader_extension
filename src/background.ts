@@ -89,9 +89,9 @@ async function login(nRetries = 0): Promise<string> {
         interactive: true,
       },
       async (token) => {
-        if (chrome.runtime.lastError) {
+        if (chrome.runtime.lastError?.message) {
           logToBackend(
-            `error while getting oauth token: ${chrome.runtime.lastError}`,
+            `error while getting oauth token: ${chrome.runtime.lastError.message}`,
             null,
             { associateUser: false }
           );
