@@ -30,7 +30,6 @@ module.exports = merge(common, {
           to: "manifest.json",
           transform(buf) {
             const data = JSON.parse(buf.toString("utf8"));
-            delete data["key"];
             data["oauth2"]["client_id"] =
               "850669494212-vnl448og3f97mnjsusupm3lftede1r34.apps.googleusercontent.com";
             return Buffer.from(JSON.stringify(data));
