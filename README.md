@@ -1,3 +1,7 @@
+# Archived
+
+This project was moved to the main repository at https://github.com/jdevries3133/fast_grader
+
 Browser extension companion of the [fast grader for Google
 Classroom.](https://classfast.app/)
 
